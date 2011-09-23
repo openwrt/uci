@@ -325,6 +325,7 @@ int uci_remove_hook(struct uci_context *ctx, const struct uci_hook_ops *ops)
 		struct uci_hook *h = uci_to_hook(e);
 		if (h->ops == ops) {
 			uci_list_del(&e->list);
+			uci_free_element(e);
 			return 0;
 		}
 	}
