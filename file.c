@@ -508,7 +508,7 @@ invalid:
 /*
  * escape an uci string for export
  */
-static char *uci_escape(struct uci_context *ctx, const char *str)
+static const char *uci_escape(struct uci_context *ctx, const char *str)
 {
 	const char *end;
 	int ofs = 0;
@@ -516,6 +516,9 @@ static char *uci_escape(struct uci_context *ctx, const char *str)
 	if (!ctx->buf) {
 		ctx->bufsz = LINEBUF;
 		ctx->buf = malloc(LINEBUF);
+
+		if (!ctx->buf)
+			return str;
 	}
 
 	while (1) {

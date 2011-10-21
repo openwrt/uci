@@ -98,6 +98,8 @@ uci_lookup_section_ref(struct uci_section *s)
 	}
 	if (!ti) {
 		ti = malloc(sizeof(struct uci_type_list));
+		if (!ti)
+			return NULL;
 		memset(ti, 0, sizeof(struct uci_type_list));
 		ti->next = type_list;
 		type_list = ti;
@@ -110,8 +112,12 @@ uci_lookup_section_ref(struct uci_section *s)
 	} else {
 		typestr = realloc(typestr, maxlen);
 	}
-	sprintf(typestr, "@%s[%d]", ti->name, ti->idx);
+
+	if (typestr)
+		sprintf(typestr, "@%s[%d]", ti->name, ti->idx);
+
 	ti->idx++;
+
 	return typestr;
 }
 

@@ -275,6 +275,8 @@ ucimap_resize_list(struct ucimap_section_data *sd, struct ucimap_list **list, in
 
 	if (!*list) {
 		new = calloc(1, size);
+		if (!new)
+			return -ENOMEM;
 
 		ucimap_add_alloc(sd, new);
 		goto set;
