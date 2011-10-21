@@ -43,8 +43,10 @@ find_context(lua_State *L, int *offset)
 	if (!lua_isuserdata(L, 1)) {
 		if (!global_ctx) {
 			global_ctx = uci_alloc_context();
-			if (!global_ctx)
+			if (!global_ctx) {
 				luaL_error(L, "failed to allocate UCI context");
+				return NULL;
+			}
 		}
 		if (offset)
 			*offset = 0;
@@ -53,8 +55,10 @@ find_context(lua_State *L, int *offset)
 	if (offset)
 		*offset = 1;
 	ctx = luaL_checkudata(L, 1, METANAME);
-	if (!ctx || !*ctx)
+	if (!ctx || !*ctx) {
 		luaL_error(L, "failed to get UCI context");
+		return NULL;
+	}
 
 	return *ctx;
 }
@@ -70,8 +74,10 @@ find_package(lua_State *L, struct uci_context *ctx, const char *str, bool al)
 	sep = strchr(str, '.');
 	if (sep) {
 		name = malloc(1 + sep - str);
-		if (!name)
+		if (!name) {
 			luaL_error(L, "out of memory");
+			return NULL;
+		}
 		strncpy(name, str, sep - str);
 		name[sep - str] = 0;
 	} else
@@ -281,7 +287,7 @@ uci_lua_foreach(lua_State *L)
 		type = luaL_checkstring(L, 2 + offset);
 
 	if (!lua_isfunction(L, 3 + offset) || !package)
-		luaL_error(L, "Invalid argument");
+		return luaL_error(L, "Invalid argument");
 
 	p = find_package(L, ctx, package, true);
 	if (!p)
@@ -554,7 +560,7 @@ uci_lua_set(lua_State *L)
 		/* Format: uci.set("p", "s", "o", "v") */
 		if (lua_istable(L, nargs)) {
 			if (lua_objlen(L, nargs) < 1)
-				luaL_error(L, "Cannot set an uci option to an empty table value");
+				return luaL_error(L, "Cannot set an uci option to an empty table value");
 			lua_rawgeti(L, nargs, 1);
 			ptr.value = luaL_checkstring(L, -1);
 			lua_pop(L, 1);
@@ -756,7 +762,7 @@ uci_lua_changes(lua_State *L)
 	case 0:
 		break;
 	default:
-		luaL_error(L, "invalid argument count");
+		return luaL_error(L, "invalid argument count");
 	}
 
 	lua_newtable(L);
@@ -861,17 +867,17 @@ uci_lua_cursor(lua_State *L)
 
 	*u = uci_alloc_context();
 	if (!*u)
-		luaL_error(L, "Cannot allocate UCI context");
+		return luaL_error(L, "Cannot allocate UCI context");
 	switch (argc) {
 		case 2:
 			if (lua_isstring(L, 2) &&
 				(uci_set_savedir(*u, luaL_checkstring(L, 2)) != UCI_OK))
-				luaL_error(L, "Unable to set savedir");
+				return luaL_error(L, "Unable to set savedir");
 			/* fall through */
 		case 1:
 			if (lua_isstring(L, 1) &&
 				(uci_set_confdir(*u, luaL_checkstring(L, 1)) != UCI_OK))
-				luaL_error(L, "Unable to set savedir");
+				return luaL_error(L, "Unable to set savedir");
 			break;
 		default:
 			break;
