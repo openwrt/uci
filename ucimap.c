@@ -162,9 +162,10 @@ ucimap_free_section(struct uci_map *map, struct ucimap_section_data *sd)
 void
 ucimap_cleanup(struct uci_map *map)
 {
-	struct ucimap_section_data *sd;
+	struct ucimap_section_data *sd, *sd_next;
 
-	for (sd = map->sdata; sd; sd = sd->next) {
+	for (sd = map->sdata; sd; sd = sd_next) {
+		sd_next = sd->next;
 		ucimap_free_section(map, sd);
 	}
 }
