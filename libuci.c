@@ -177,7 +177,7 @@ uci_get_errorstr(struct uci_context *ctx, char **dest, const char *prefix)
 	if (dest) {
 		err = asprintf(dest, format,
 			(prefix ? prefix : ""), (prefix ? ": " : ""),
-			(ctx->func ? ctx->func : ""), (ctx->func ? ": " : ""),
+			(ctx && ctx->func ? ctx->func : ""), (ctx && ctx->func ? ": " : ""),
 			uci_errstr[err],
 			error_info);
 		if (err < 0)
@@ -186,7 +186,7 @@ uci_get_errorstr(struct uci_context *ctx, char **dest, const char *prefix)
 		strcat(error_info, "\n");
 		fprintf(stderr, format,
 			(prefix ? prefix : ""), (prefix ? ": " : ""),
-			(ctx->func ? ctx->func : ""), (ctx->func ? ": " : ""),
+			(ctx && ctx->func ? ctx->func : ""), (ctx && ctx->func ? ": " : ""),
 			uci_errstr[err],
 			error_info);
 	}

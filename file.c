@@ -619,7 +619,7 @@ int uci_import(struct uci_context *ctx, FILE *stream, const char *name, struct u
 	uci_alloc_parse_context(ctx);
 	pctx = ctx->pctx;
 	pctx->file = stream;
-	if (*package && single) {
+	if (package && *package && single) {
 		pctx->package = *package;
 		pctx->merge = true;
 	}

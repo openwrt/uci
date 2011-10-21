@@ -132,6 +132,8 @@ static struct ucimap_section_data *
 network_allocate(struct uci_map *map, struct uci_sectionmap *sm, struct uci_section *s)
 {
 	struct uci_network *p = malloc(sizeof(struct uci_network));
+	if (!p)
+		return NULL;
 	memset(p, 0, sizeof(struct uci_network));
 	return &p->map;
 }
@@ -244,6 +246,8 @@ int main(int argc, char **argv)
 
 	INIT_LIST_HEAD(&ifs);
 	ctx = uci_alloc_context();
+	if (!ctx)
+		return -1;
 	ucimap_init(&network_map);
 
 	if ((argc >= 2) && !strcmp(argv[1], "-s")) {

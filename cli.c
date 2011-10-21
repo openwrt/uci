@@ -450,7 +450,7 @@ static int uci_do_section_cmd(int cmd, int argc, char **argv)
 		ret = uci_add_list(ctx, &ptr);
 		break;
 	case CMD_REORDER:
-		if (!ptr.s) {
+		if (!ptr.s || !ptr.value) {
 			ctx->err = UCI_ERR_NOTFOUND;
 			cli_perror();
 			return 1;

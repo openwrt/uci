@@ -186,9 +186,9 @@ struct uci_backend _var = {		\
 #define UCI_HANDLE_ERR(ctx) do {	\
 	DPRINTF("ENTER: %s\n", __func__); \
 	int __val = 0;			\
-	ctx->err = 0;			\
 	if (!ctx)			\
 		return UCI_ERR_INVAL;	\
+	ctx->err = 0;			\
 	if (!ctx->internal && !ctx->nested) \
 		__val = setjmp(ctx->trap); \
 	ctx->internal = false;		\

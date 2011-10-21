@@ -485,7 +485,7 @@ static void uci_add_element_list(struct uci_context *ctx, struct uci_ptr *ptr, b
 int uci_rename(struct uci_context *ctx, struct uci_ptr *ptr)
 {
 	/* NB: UCI_INTERNAL use means without delta tracking */
-	bool internal = ctx->internal;
+	bool internal = ctx && ctx->internal;
 	struct uci_element *e;
 	struct uci_package *p;
 	char *n;
@@ -530,7 +530,7 @@ int uci_reorder_section(struct uci_context *ctx, struct uci_section *s, int pos)
 
 int uci_add_section(struct uci_context *ctx, struct uci_package *p, const char *type, struct uci_section **res)
 {
-	bool internal = ctx->internal;
+	bool internal = ctx && ctx->internal;
 	struct uci_section *s;
 
 	UCI_HANDLE_ERR(ctx);
@@ -547,7 +547,7 @@ int uci_add_section(struct uci_context *ctx, struct uci_package *p, const char *
 int uci_delete(struct uci_context *ctx, struct uci_ptr *ptr)
 {
 	/* NB: pass on internal flag to uci_del_element */
-	bool internal = ctx->internal;
+	bool internal = ctx && ctx->internal;
 	struct uci_package *p;
 	struct uci_element *e;
 
@@ -574,7 +574,7 @@ int uci_delete(struct uci_context *ctx, struct uci_ptr *ptr)
 int uci_add_list(struct uci_context *ctx, struct uci_ptr *ptr)
 {
 	/* NB: UCI_INTERNAL use means without delta tracking */
-	bool internal = ctx->internal;
+	bool internal = ctx && ctx->internal;
 	struct uci_option *prev = NULL;
 	const char *value2 = NULL;
 
@@ -615,7 +615,7 @@ int uci_add_list(struct uci_context *ctx, struct uci_ptr *ptr)
 int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 {
 	/* NB: UCI_INTERNAL use means without delta tracking */
-	bool internal = ctx->internal;
+	bool internal = ctx && ctx->internal;
 
 	UCI_HANDLE_ERR(ctx);
 	uci_expand_ptr(ctx, ptr, false);

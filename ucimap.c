@@ -295,6 +295,9 @@ realloc:
 		offset = (items - (*list)->size) * sizeof(union ucimap_data);
 
 	a->ptr = realloc(a->ptr, size);
+	if (!a->ptr)
+		return -ENOMEM;
+
 	if (offset)
 		memset((char *) a->ptr + offset, 0, size - offset);
 	new = a->ptr;
