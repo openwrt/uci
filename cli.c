@@ -633,6 +633,11 @@ int main(int argc, char **argv)
 				delimiter = optarg;
 				break;
 			case 'f':
+				if (input != stdin) {
+					perror("uci");
+					return 1;
+				}
+
 				input = fopen(optarg, "r");
 				if (!input) {
 					perror("uci");
