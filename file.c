@@ -398,7 +398,7 @@ static void uci_parse_config(struct uci_context *ctx, char **str)
 	name = next_arg(ctx, str, false, true);
 	assert_eol(ctx, str);
 
-	if (!name) {
+	if (!name || !name[0]) {
 		ctx->internal = !pctx->merge;
 		UCI_NESTED(uci_add_section, ctx, pctx->package, type, &pctx->section);
 	} else {
