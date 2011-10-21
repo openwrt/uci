@@ -712,6 +712,8 @@ ucimap_parse_section(struct uci_map *map, struct uci_sectionmap *sm, struct ucim
 	return 0;
 
 error_mem:
+	if (sd->alloc_custom)
+		free(sd->alloc_custom);
 	if (sd->allocmap)
 		free(sd->allocmap);
 	free(sd);
