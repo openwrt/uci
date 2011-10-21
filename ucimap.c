@@ -314,6 +314,7 @@ ucimap_add_fixup(struct ucimap_section_data *sd, union ucimap_data *data, struct
 	struct ucimap_fixup *f, tmp;
 	struct uci_map *map = sd->map;
 
+	tmp.next = NULL;
 	tmp.sm = om->data.sm;
 	tmp.name = str;
 	tmp.type = om->type;
