@@ -691,6 +691,7 @@ uci_lua_add_change(lua_State *L, struct uci_element *e)
 {
 	struct uci_delta *h;
 	const char *name;
+	const char *value;
 
 	h = uci_to_delta(e);
 	if (!h->section)
@@ -704,12 +705,40 @@ uci_lua_add_change(lua_State *L, struct uci_element *e)
 		lua_setfield(L, -3, h->section);
 	}
 
-	name = (h->e.name ? h->e.name : ".type");
-	if (h->value)
-		lua_pushstring(L, h->value);
-	else
-		lua_pushstring(L, "");
-	lua_setfield(L, -2, name);
+	name = h->e.name;
+	value = h->value ? h->value : "";
+
+	if (name) {
+		lua_getfield(L, -1, name);
+
+		/* there seems to be no value yet so simply push it as string */
+		if (lua_isnil(L, -1)) {
+			lua_pushstring(L, value);
+			lua_setfield(L, -3, name);
+
+		/* there is already a value, so this change is a list_add,
+		 * coerce string into one-element array and append new value */
+		} else if (lua_isstring(L, -1)) {
+			lua_newtable(L);
+			lua_pushvalue(L, -2);
+			lua_rawseti(L, -2, 1);
+			lua_pushstring(L, value);
+			lua_rawseti(L, -2, 2);
+			lua_setfield(L, -3, name);
+
+		/* a table is on the top of the stack so this is a subsequent,
+		 * list_add, append this value to table */
+		} else if (lua_istable(L, -1)) {
+			lua_pushstring(L, value);
+			lua_rawseti(L, -2, lua_objlen(L, -2) + 1);
+		}
+
+		lua_pop(L, 1);
+	} else {
+		lua_pushstring(L, value);
+		lua_setfield(L, -2, ".type");
+	}
+
 	lua_pop(L, 1);
 }
 
