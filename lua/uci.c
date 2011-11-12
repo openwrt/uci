@@ -711,20 +711,18 @@ uci_lua_add_change(lua_State *L, struct uci_element *e)
 	if (name) {
 		lua_getfield(L, -1, name);
 
-		/* there seems to be no value yet so simply push it as string */
+		/* there seems to be no value yet */
 		if (lua_isnil(L, -1)) {
-			lua_pushstring(L, value);
-			lua_setfield(L, -3, name);
-
-		/* there is already a value, so this change is a list_add,
-		 * coerce string into one-element array and append new value */
-		} else if (lua_isstring(L, -1)) {
-			lua_newtable(L);
-			lua_pushvalue(L, -2);
-			lua_rawseti(L, -2, 1);
-			lua_pushstring(L, value);
-			lua_rawseti(L, -2, 2);
-			lua_setfield(L, -3, name);
+			/* this delta is a list add operation, initialize table */
+			if (h->cmd == UCI_CMD_LIST_ADD) {
+				lua_newtable(L);
+				lua_pushstring(L, value);
+				lua_rawseti(L, -2, 1);
+				lua_setfield(L, -3, name);
+			} else {
+				lua_pushstring(L, value);
+				lua_setfield(L, -3, name);
+			}
 
 		/* a table is on the top of the stack so this is a subsequent,
 		 * list_add, append this value to table */
