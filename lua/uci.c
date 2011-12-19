@@ -724,11 +724,22 @@ uci_lua_add_change(lua_State *L, struct uci_element *e)
 				lua_setfield(L, -3, name);
 			}
 
-		/* a table is on the top of the stack so this is a subsequent,
-		 * list_add, append this value to table */
-		} else if (lua_istable(L, -1)) {
-			lua_pushstring(L, value);
-			lua_rawseti(L, -2, lua_objlen(L, -2) + 1);
+		/* there is a value already, append */
+		} else {
+			/* a string is on top of the stack, coerce into table */
+			if (lua_isstring(L, -1)) {
+				lua_newtable(L);
+				lua_pushvalue(L, -2);
+				lua_rawseti(L, -2, 1);
+				lua_setfield(L, -3, name);
+			}
+
+			/* a table is on the top of the stack so this is a subsequent,
+			 * list_add, append this value to table */
+			if (lua_istable(L, -1)) {
+				lua_pushstring(L, value);
+				lua_rawseti(L, -2, lua_objlen(L, -2) + 1);
+			}
 		}
 
 		lua_pop(L, 1);
