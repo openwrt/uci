@@ -711,35 +711,38 @@ uci_lua_add_change(lua_State *L, struct uci_element *e)
 	if (name) {
 		lua_getfield(L, -1, name);
 
-		/* there seems to be no value yet */
-		if (lua_isnil(L, -1)) {
-			/* this delta is a list add operation, initialize table */
-			if (h->cmd == UCI_CMD_LIST_ADD) {
+		/* this delta is a list add operation */
+		if (h->cmd == UCI_CMD_LIST_ADD) {
+			/* there seems to be no table yet */
+			if (!lua_istable(L, -1)) {
 				lua_newtable(L);
-				lua_pushstring(L, value);
-				lua_rawseti(L, -2, 1);
-				lua_setfield(L, -3, name);
-			} else {
-				lua_pushstring(L, value);
-				lua_setfield(L, -3, name);
-			}
 
-		/* there is a value already, append */
-		} else {
-			/* a string is on top of the stack, coerce into table */
-			if (lua_isstring(L, -1)) {
-				lua_newtable(L);
-				lua_pushvalue(L, -2);
-				lua_rawseti(L, -2, 1);
-				lua_setfield(L, -3, name);
-			}
+				/* if there is a value on the stack already, add */
+				if (!lua_isnil(L, -2)) {
+					lua_pushvalue(L, -2);
+					lua_rawseti(L, -2, 1);
+					lua_pushstring(L, value);
+					lua_rawseti(L, -2, 2);
 
-			/* a table is on the top of the stack so this is a subsequent,
+				/* this is the first table item */
+				} else {
+					lua_pushstring(L, value);
+					lua_rawseti(L, -2, 1);
+				}
+
+				lua_setfield(L, -3, name);
+
+			/* a table is on the top of the stack and this is a subsequent,
 			 * list_add, append this value to table */
-			if (lua_istable(L, -1)) {
+			} else {
 				lua_pushstring(L, value);
 				lua_rawseti(L, -2, lua_objlen(L, -2) + 1);
 			}
+
+		/* non-list change, simply set/replace field */
+		} else {
+			lua_pushstring(L, value);
+			lua_setfield(L, -3, name);
 		}
 
 		lua_pop(L, 1);
