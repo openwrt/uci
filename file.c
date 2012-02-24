@@ -561,23 +561,23 @@ static void uci_export_package(struct uci_package *p, FILE *stream, bool header)
 	struct uci_element *s, *o, *i;
 
 	if (header)
-		fprintf(stream, "package '%s'\n", uci_escape(ctx, p->e.name));
+		fprintf(stream, "package %s\n", uci_escape(ctx, p->e.name));
 	uci_foreach_element(&p->sections, s) {
 		struct uci_section *sec = uci_to_section(s);
-		fprintf(stream, "\nconfig '%s'", uci_escape(ctx, sec->type));
+		fprintf(stream, "\nconfig %s", uci_escape(ctx, sec->type));
 		if (!sec->anonymous || (ctx->flags & UCI_FLAG_EXPORT_NAME))
-			fprintf(stream, " '%s'", uci_escape(ctx, sec->e.name));
+			fprintf(stream, " %s", uci_escape(ctx, sec->e.name));
 		fprintf(stream, "\n");
 		uci_foreach_element(&sec->options, o) {
 			struct uci_option *opt = uci_to_option(o);
 			switch(opt->type) {
 			case UCI_TYPE_STRING:
-				fprintf(stream, "\toption '%s'", uci_escape(ctx, opt->e.name));
+				fprintf(stream, "\toption %s", uci_escape(ctx, opt->e.name));
 				fprintf(stream, " '%s'\n", uci_escape(ctx, opt->v.string));
 				break;
 			case UCI_TYPE_LIST:
 				uci_foreach_element(&opt->v.list, i) {
-					fprintf(stream, "\tlist '%s'", uci_escape(ctx, opt->e.name));
+					fprintf(stream, "\tlist %s", uci_escape(ctx, opt->e.name));
 					fprintf(stream, " '%s'\n", uci_escape(ctx, i->name));
 				}
 				break;
