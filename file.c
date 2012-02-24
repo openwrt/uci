@@ -566,7 +566,7 @@ static void uci_export_package(struct uci_package *p, FILE *stream, bool header)
 		struct uci_section *sec = uci_to_section(s);
 		fprintf(stream, "\nconfig %s", uci_escape(ctx, sec->type));
 		if (!sec->anonymous || (ctx->flags & UCI_FLAG_EXPORT_NAME))
-			fprintf(stream, " %s", uci_escape(ctx, sec->e.name));
+			fprintf(stream, " '%s'", uci_escape(ctx, sec->e.name));
 		fprintf(stream, "\n");
 		uci_foreach_element(&sec->options, o) {
 			struct uci_option *opt = uci_to_option(o);
