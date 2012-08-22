@@ -837,9 +837,9 @@ static struct uci_package *uci_file_load(struct uci_context *ctx, const char *na
 		break;
 	}
 
+	UCI_TRAP_SAVE(ctx, done);
 	file = uci_open_stream(ctx, filename, SEEK_SET, false, false);
 	ctx->err = 0;
-	UCI_TRAP_SAVE(ctx, done);
 	UCI_INTERNAL(uci_import, ctx, file, name, &package, true);
 	UCI_TRAP_RESTORE(ctx);
 
@@ -851,8 +851,10 @@ static struct uci_package *uci_file_load(struct uci_context *ctx, const char *na
 
 done:
 	uci_close_stream(file);
-	if (ctx->err)
+	if (ctx->err) {
+		free(filename);
 		UCI_THROW(ctx, ctx->err);
+	}
 	return package;
 }
 
