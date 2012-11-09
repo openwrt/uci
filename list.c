@@ -612,6 +612,38 @@ int uci_add_list(struct uci_context *ctx, struct uci_ptr *ptr)
 	return 0;
 }
 
+int uci_del_list(struct uci_context *ctx, struct uci_ptr *ptr)
+{
+	/* NB: pass on internal flag to uci_del_element */
+	bool internal = ctx && ctx->internal;
+	struct uci_element *e, *tmp;
+	struct uci_package *p;
+
+	UCI_HANDLE_ERR(ctx);
+
+	uci_expand_ptr(ctx, ptr, false);
+	UCI_ASSERT(ctx, ptr->s);
+	UCI_ASSERT(ctx, ptr->value);
+
+	if (!(ptr->o && ptr->option))
+		return 0;
+
+	if ((ptr->o->type != UCI_TYPE_LIST))
+		return 0;
+
+	p = ptr->p;
+	if (!internal && p->has_delta)
+		uci_add_delta(ctx, &p->delta, UCI_CMD_LIST_DEL, ptr->section, ptr->option, ptr->value);
+
+	uci_foreach_element_safe(&ptr->o->v.list, tmp, e) {
+		if (!strcmp(ptr->value, uci_to_option(e)->e.name)) {
+			uci_free_option(uci_to_option(e));
+		}
+	}
+
+	return 0;
+}
+
 int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 {
 	/* NB: UCI_INTERNAL use means without delta tracking */

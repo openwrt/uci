@@ -38,6 +38,7 @@ enum {
 	CMD_GET,
 	CMD_SET,
 	CMD_ADD_LIST,
+	CMD_DEL_LIST,
 	CMD_DEL,
 	CMD_RENAME,
 	CMD_REVERT,
@@ -133,6 +134,7 @@ static void uci_usage(void)
 		"\tcommit     [<config>]\n"
 		"\tadd        <config> <section-type>\n"
 		"\tadd_list   <config>.<section>.<option>=<string>\n"
+		"\tdel_list   <config>.<section>.<option>=<string>\n"
 		"\tshow       [<config>[.<section>[.<option>]]]\n"
 		"\tget        <config>.<section>[.<option>]\n"
 		"\tset        <config>.<section>[.<option>]=<value>\n"
@@ -241,6 +243,9 @@ static void uci_show_changes(struct uci_package *p)
 			break;
 		case UCI_CMD_LIST_ADD:
 			op = "+=";
+			break;
+		case UCI_CMD_LIST_DEL:
+			op = "-=";
 			break;
 		default:
 			break;
@@ -418,7 +423,9 @@ static int uci_do_section_cmd(int cmd, int argc, char **argv)
 		return 1;
 	}
 
-	if (ptr.value && (cmd != CMD_SET) && (cmd != CMD_ADD_LIST) && (cmd != CMD_RENAME) && (cmd != CMD_REORDER))
+	if (ptr.value && (cmd != CMD_SET) &&
+	    (cmd != CMD_ADD_LIST) && (cmd != CMD_DEL_LIST) &&
+	    (cmd != CMD_RENAME) && (cmd != CMD_REORDER))
 		return 1;
 
 	e = ptr.last;
@@ -452,6 +459,9 @@ static int uci_do_section_cmd(int cmd, int argc, char **argv)
 		break;
 	case CMD_ADD_LIST:
 		ret = uci_add_list(ctx, &ptr);
+		break;
+	case CMD_DEL_LIST:
+		ret = uci_del_list(ctx, &ptr);
 		break;
 	case CMD_REORDER:
 		if (!ptr.s || !ptr.value) {
@@ -585,11 +595,14 @@ static int uci_cmd(int argc, char **argv)
 		cmd = CMD_ADD;
 	else if (!strcasecmp(argv[0], "add_list"))
 		cmd = CMD_ADD_LIST;
+	else if (!strcasecmp(argv[0], "del_list"))
+		cmd = CMD_DEL_LIST;
 	else
 		cmd = -1;
 
 	switch(cmd) {
 		case CMD_ADD_LIST:
+		case CMD_DEL_LIST:
 		case CMD_GET:
 		case CMD_SET:
 		case CMD_DEL:

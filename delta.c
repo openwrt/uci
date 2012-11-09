@@ -114,6 +114,9 @@ static inline int uci_parse_delta_tuple(struct uci_context *ctx, char **buf, str
 	case '|':
 		c = UCI_CMD_LIST_ADD;
 		break;
+	case '_':
+		c = UCI_CMD_LIST_DEL;
+		break;
 	}
 
 	if (c != UCI_CMD_CHANGE)
@@ -136,6 +139,9 @@ static inline int uci_parse_delta_tuple(struct uci_context *ctx, char **buf, str
 			goto error;
 		break;
 	case UCI_CMD_LIST_ADD:
+		if (!ptr->option)
+			goto error;
+	case UCI_CMD_LIST_DEL:
 		if (!ptr->option)
 			goto error;
 	}
@@ -175,6 +181,9 @@ static void uci_parse_delta_line(struct uci_context *ctx, struct uci_package *p,
 		break;
 	case UCI_CMD_LIST_ADD:
 		UCI_INTERNAL(uci_add_list, ctx, &ptr);
+		break;
+	case UCI_CMD_LIST_DEL:
+		UCI_INTERNAL(uci_del_list, ctx, &ptr);
 		break;
 	case UCI_CMD_ADD:
 	case UCI_CMD_CHANGE:
@@ -459,6 +468,9 @@ int uci_save(struct uci_context *ctx, struct uci_package *p)
 			break;
 		case UCI_CMD_LIST_ADD:
 			prefix = "|";
+			break;
+		case UCI_CMD_LIST_DEL:
+			prefix = "_";
 			break;
 		default:
 			break;

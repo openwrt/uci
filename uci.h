@@ -188,6 +188,14 @@ extern int uci_set(struct uci_context *ctx, struct uci_ptr *ptr);
 extern int uci_add_list(struct uci_context *ctx, struct uci_ptr *ptr);
 
 /**
+ * uci_del_list: Remove a string from an element list
+ * @ctx: uci context
+ * @ptr: uci pointer (with value)
+ *
+ */
+extern int uci_del_list(struct uci_context *ctx, struct uci_ptr *ptr);
+
+/**
  * uci_reorder: Reposition a section
  * @ctx: uci context
  * @s: uci section to reposition
@@ -489,6 +497,7 @@ enum uci_command {
 	UCI_CMD_RENAME,
 	UCI_CMD_REORDER,
 	UCI_CMD_LIST_ADD,
+	UCI_CMD_LIST_DEL,
 };
 
 struct uci_delta
