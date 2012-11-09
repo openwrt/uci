@@ -138,7 +138,7 @@ static void uci_usage(void)
 		"\tshow       [<config>[.<section>[.<option>]]]\n"
 		"\tget        <config>.<section>[.<option>]\n"
 		"\tset        <config>.<section>[.<option>]=<value>\n"
-		"\tdelete     <config>[.<section[.<option>]]\n"
+		"\tdelete     <config>[.<section>[[.<option>][=<id>]]]\n"
 		"\trename     <config>.<section>[.<option>]=<name>\n"
 		"\trevert     <config>[.<section>[.<option>]]\n"
 		"\treorder    <config>.<section>=<position>\n"
@@ -414,6 +414,7 @@ static int uci_do_section_cmd(int cmd, int argc, char **argv)
 	struct uci_element *e;
 	struct uci_ptr ptr;
 	int ret = UCI_OK;
+	int dummy;
 
 	if (argc != 2)
 		return 255;
@@ -423,7 +424,7 @@ static int uci_do_section_cmd(int cmd, int argc, char **argv)
 		return 1;
 	}
 
-	if (ptr.value && (cmd != CMD_SET) &&
+	if (ptr.value && (cmd != CMD_SET) && (cmd != CMD_DEL) &&
 	    (cmd != CMD_ADD_LIST) && (cmd != CMD_DEL_LIST) &&
 	    (cmd != CMD_RENAME) && (cmd != CMD_REORDER))
 		return 1;
@@ -472,6 +473,8 @@ static int uci_do_section_cmd(int cmd, int argc, char **argv)
 		ret = uci_reorder_section(ctx, ptr.s, strtoul(ptr.value, NULL, 10));
 		break;
 	case CMD_DEL:
+		if (ptr.value && !sscanf(ptr.value, "%d", &dummy))
+			return 1;
 		ret = uci_delete(ctx, &ptr);
 		break;
 	}

@@ -480,7 +480,7 @@ int uci_save(struct uci_context *ctx, struct uci_package *p)
 		if (e->name)
 			fprintf(f, ".%s", e->name);
 
-		if (h->cmd == UCI_CMD_REMOVE)
+		if (h->cmd == UCI_CMD_REMOVE && !h->value)
 			fprintf(f, "\n");
 		else
 			fprintf(f, "=%s\n", h->value);

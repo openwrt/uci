@@ -549,19 +549,37 @@ int uci_delete(struct uci_context *ctx, struct uci_ptr *ptr)
 	/* NB: pass on internal flag to uci_del_element */
 	bool internal = ctx && ctx->internal;
 	struct uci_package *p;
-	struct uci_element *e;
+	struct uci_element *e1, *e2, *tmp;
+	int index;
 
 	UCI_HANDLE_ERR(ctx);
 
-	e = uci_expand_ptr(ctx, ptr, true);
+	e1 = uci_expand_ptr(ctx, ptr, true);
 	p = ptr->p;
 
 	UCI_ASSERT(ctx, ptr->s);
 
+	if (ptr->value && ptr->o && ptr->o->type == UCI_TYPE_LIST) {
+		if (!sscanf(ptr->value, "%d", &index))
+			return 1;
+
+		uci_foreach_element_safe(&ptr->o->v.list, tmp, e2) {
+			if (index == 0) {
+				if (!internal && p->has_delta)
+					uci_add_delta(ctx, &p->delta, UCI_CMD_REMOVE, ptr->section, ptr->option, ptr->value);
+				uci_free_option(uci_to_option(e2));
+				return 0;
+			}
+			index--;
+		}
+
+		return 0;
+	}
+
 	if (!internal && p->has_delta)
 		uci_add_delta(ctx, &p->delta, UCI_CMD_REMOVE, ptr->section, ptr->option, NULL);
 
-	uci_free_any(&e);
+	uci_free_any(&e1);
 
 	if (ptr->option)
 		ptr->o = NULL;
