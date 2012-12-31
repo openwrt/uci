@@ -15,25 +15,18 @@ CONFIGURE_FILE( ${CMAKE_SOURCE_DIR}/uci_config.h.in ${CMAKE_SOURCE_DIR}/uci_conf
 
 SET(LIB_SOURCES libuci.c file.c util.c delta.c parse.c)
 
-ADD_LIBRARY(uci-shared SHARED ${LIB_SOURCES})
-SET_TARGET_PROPERTIES(uci-shared PROPERTIES OUTPUT_NAME uci)
-TARGET_LINK_LIBRARIES(uci-shared dl)
-
-ADD_LIBRARY(uci-static STATIC ${LIB_SOURCES})
-SET_TARGET_PROPERTIES(uci-static PROPERTIES OUTPUT_NAME uci)
+ADD_LIBRARY(uci SHARED ${LIB_SOURCES})
+SET_TARGET_PROPERTIES(uci PROPERTIES OUTPUT_NAME uci)
+TARGET_LINK_LIBRARIES(uci dl)
 
 ADD_EXECUTABLE(cli cli.c)
 SET_TARGET_PROPERTIES(cli PROPERTIES OUTPUT_NAME uci)
-TARGET_LINK_LIBRARIES(cli uci-shared dl)
-
-ADD_EXECUTABLE(cli-static cli.c)
-SET_TARGET_PROPERTIES(cli-static PROPERTIES OUTPUT_NAME uci-static)
-TARGET_LINK_LIBRARIES(cli-static uci-static dl)
+TARGET_LINK_LIBRARIES(cli uci dl)
 
 ADD_LIBRARY(ucimap STATIC ucimap.c)
 
 ADD_EXECUTABLE(ucimap-example ucimap-example.c)
-TARGET_LINK_LIBRARIES(ucimap-example uci-static ucimap dl)
+TARGET_LINK_LIBRARIES(ucimap-example uci ucimap dl)
 
 ADD_SUBDIRECTORY(lua)
 
@@ -41,7 +34,7 @@ INSTALL(FILES uci.h uci_config.h ucimap.h
 	DESTINATION include
 )
 
-INSTALL(TARGETS uci-shared uci-static cli cli-static
+INSTALL(TARGETS uci cli
 	ARCHIVE DESTINATION lib
 	LIBRARY DESTINATION lib
 	RUNTIME DESTINATION bin
