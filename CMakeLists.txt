@@ -16,16 +16,15 @@ SET(LIB_SOURCES libuci.c file.c util.c delta.c parse.c)
 
 ADD_LIBRARY(uci SHARED ${LIB_SOURCES})
 SET_TARGET_PROPERTIES(uci PROPERTIES OUTPUT_NAME uci)
-TARGET_LINK_LIBRARIES(uci dl)
 
 ADD_EXECUTABLE(cli cli.c)
 SET_TARGET_PROPERTIES(cli PROPERTIES OUTPUT_NAME uci)
-TARGET_LINK_LIBRARIES(cli uci dl)
+TARGET_LINK_LIBRARIES(cli uci)
 
 ADD_LIBRARY(ucimap STATIC ucimap.c)
 
 ADD_EXECUTABLE(ucimap-example ucimap-example.c)
-TARGET_LINK_LIBRARIES(ucimap-example uci ucimap dl)
+TARGET_LINK_LIBRARIES(ucimap-example uci ucimap)
 
 ADD_SUBDIRECTORY(lua)
 
