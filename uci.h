@@ -61,7 +61,6 @@ struct uci_list
 };
 
 struct uci_ptr;
-struct uci_hook_ops;
 struct uci_element;
 struct uci_package;
 struct uci_section;
@@ -300,23 +299,6 @@ extern int uci_set_backend(struct uci_context *ctx, const char *name);
  */
 extern bool uci_validate_text(const char *str);
 
-
-/**
- * uci_add_hook: add a uci hook
- * @ctx: uci context
- * @ops: uci hook ops
- *
- * NB: allocated and freed by the caller
- */
-extern int uci_add_hook(struct uci_context *ctx, const struct uci_hook_ops *ops);
-
-/**
- * uci_remove_hook: remove a uci hook
- * @ctx: uci context
- * @ops: uci hook ops
- */
-extern int uci_remove_hook(struct uci_context *ctx, const struct uci_hook_ops *ops);
-
 /**
  * uci_parse_ptr: parse a uci string into a uci_ptr
  * @ctx: uci context
@@ -428,8 +410,6 @@ struct uci_context
 	bool internal, nested;
 	char *buf;
 	int bufsz;
-
-	struct uci_list hooks;
 };
 
 struct uci_package
@@ -504,18 +484,6 @@ struct uci_ptr
 	const char *section;
 	const char *option;
 	const char *value;
-};
-
-struct uci_hook_ops
-{
-	void (*load)(const struct uci_hook_ops *ops, struct uci_package *p);
-	void (*set)(const struct uci_hook_ops *ops, struct uci_package *p, struct uci_delta *e);
-};
-
-struct uci_hook
-{
-	struct uci_element e;
-	const struct uci_hook_ops *ops;
 };
 
 struct uci_parse_option {
@@ -593,7 +561,6 @@ struct uci_parse_option {
 #define uci_type_package UCI_TYPE_PACKAGE
 #define uci_type_section UCI_TYPE_SECTION
 #define uci_type_option UCI_TYPE_OPTION
-#define uci_type_hook UCI_TYPE_HOOK
 
 /* element typecasting */
 #ifdef UCI_DEBUG_TYPECAST
@@ -603,7 +570,6 @@ static const char *uci_typestr[] = {
 	[uci_type_package] = "package",
 	[uci_type_section] = "section",
 	[uci_type_option] = "option",
-	[uci_type_hook] = "hook",
 };
 
 static void uci_typecast_error(int from, int to)
@@ -625,7 +591,6 @@ BUILD_CAST(delta)
 BUILD_CAST(package)
 BUILD_CAST(section)
 BUILD_CAST(option)
-BUILD_CAST(hook)
 
 #else
 #define uci_to_backend(ptr) container_of(ptr, struct uci_backend, e)
@@ -633,7 +598,6 @@ BUILD_CAST(hook)
 #define uci_to_package(ptr) container_of(ptr, struct uci_package, e)
 #define uci_to_section(ptr) container_of(ptr, struct uci_section, e)
 #define uci_to_option(ptr)  container_of(ptr, struct uci_option, e)
-#define uci_to_hook(ptr)    container_of(ptr, struct uci_hook, e)
 #endif
 
 /**

@@ -56,7 +56,6 @@ struct uci_context *uci_alloc_context(void)
 	uci_list_init(&ctx->root);
 	uci_list_init(&ctx->delta_path);
 	uci_list_init(&ctx->backends);
-	uci_list_init(&ctx->hooks);
 	ctx->flags = UCI_FLAG_STRICT | UCI_FLAG_SAVED_DELTA;
 
 	ctx->confdir = (char *) uci_confdir;
@@ -210,16 +209,10 @@ int uci_commit(struct uci_context *ctx, struct uci_package **package, bool overw
 int uci_load(struct uci_context *ctx, const char *name, struct uci_package **package)
 {
 	struct uci_package *p;
-	struct uci_element *e;
 
 	UCI_HANDLE_ERR(ctx);
 	UCI_ASSERT(ctx, ctx->backend && ctx->backend->load);
 	p = ctx->backend->load(ctx, name);
-	uci_foreach_element(&ctx->hooks, e) {
-		struct uci_hook *h = uci_to_hook(e);
-		if (h->ops->load)
-			h->ops->load(h->ops, p);
-	}
 	if (package)
 		*package = p;
 
@@ -237,41 +230,4 @@ int uci_set_backend(struct uci_context *ctx, const char *name)
 		UCI_THROW(ctx, UCI_ERR_NOTFOUND);
 	ctx->backend = uci_to_backend(e);
 	return 0;
-}
-
-int uci_add_hook(struct uci_context *ctx, const struct uci_hook_ops *ops)
-{
-	struct uci_element *e;
-	struct uci_hook *h;
-
-	UCI_HANDLE_ERR(ctx);
-
-	/* check for duplicate elements */
-	uci_foreach_element(&ctx->hooks, e) {
-		h = uci_to_hook(e);
-		if (h->ops == ops)
-			return UCI_ERR_INVAL;
-	}
-
-	h = uci_alloc_element(ctx, hook, "", 0);
-	h->ops = ops;
-	uci_list_init(&h->e.list);
-	uci_list_add(&ctx->hooks, &h->e.list);
-
-	return 0;
-}
-
-int uci_remove_hook(struct uci_context *ctx, const struct uci_hook_ops *ops)
-{
-	struct uci_element *e;
-
-	uci_foreach_element(&ctx->hooks, e) {
-		struct uci_hook *h = uci_to_hook(e);
-		if (h->ops == ops) {
-			uci_list_del(&e->list);
-			uci_free_element(e);
-			return 0;
-		}
-	}
-	return UCI_ERR_NOTFOUND;
 }
