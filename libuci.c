@@ -37,8 +37,6 @@ static const char *uci_errstr[] = {
 	[UCI_ERR_UNKNOWN] =   "Unknown error",
 };
 
-static void uci_unload_plugin(struct uci_context *ctx, struct uci_plugin *p);
-
 #include "uci_internal.h"
 #include "list.c"
 
@@ -59,7 +57,6 @@ struct uci_context *uci_alloc_context(void)
 	uci_list_init(&ctx->delta_path);
 	uci_list_init(&ctx->backends);
 	uci_list_init(&ctx->hooks);
-	uci_list_init(&ctx->plugins);
 	ctx->flags = UCI_FLAG_STRICT | UCI_FLAG_SAVED_DELTA;
 
 	ctx->confdir = (char *) uci_confdir;
@@ -90,9 +87,6 @@ void uci_free_context(struct uci_context *ctx)
 		uci_free_element(e);
 	}
 	UCI_TRAP_RESTORE(ctx);
-	uci_foreach_element_safe(&ctx->root, tmp, e) {
-		uci_unload_plugin(ctx, uci_to_plugin(e));
-	}
 	free(ctx);
 
 ignore:
@@ -232,56 +226,6 @@ int uci_load(struct uci_context *ctx, const char *name, struct uci_package **pac
 	return 0;
 }
 
-#ifdef UCI_PLUGIN_SUPPORT
-
-__plugin int uci_add_backend(struct uci_context *ctx, struct uci_backend *b)
-{
-	struct uci_element *e;
-	UCI_HANDLE_ERR(ctx);
-
-	e = uci_lookup_list(&ctx->backends, b->e.name);
-	if (e)
-		UCI_THROW(ctx, UCI_ERR_DUPLICATE);
-
-	e = uci_malloc(ctx, sizeof(struct uci_backend));
-	memcpy(e, b, sizeof(struct uci_backend));
-
-	uci_list_add(&ctx->backends, &e->list);
-	return 0;
-}
-
-__plugin int uci_del_backend(struct uci_context *ctx, struct uci_backend *b)
-{
-	struct uci_element *e, *tmp;
-
-	UCI_HANDLE_ERR(ctx);
-
-	e = uci_lookup_list(&ctx->backends, b->e.name);
-	if (!e || uci_to_backend(e)->ptr != b->ptr)
-		UCI_THROW(ctx, UCI_ERR_NOTFOUND);
-	b = uci_to_backend(e);
-
-	if (ctx->backend && ctx->backend->ptr == b->ptr)
-		ctx->backend = &uci_file_backend;
-
-	uci_foreach_element_safe(&ctx->root, tmp, e) {
-		struct uci_package *p = uci_to_package(e);
-
-		if (!p->backend)
-			continue;
-
-		if (p->backend->ptr == b->ptr)
-			UCI_INTERNAL(uci_unload, ctx, p);
-	}
-
-	uci_list_del(&b->e.list);
-	free(b);
-
-	return 0;
-}
-
-#endif
-
 int uci_set_backend(struct uci_context *ctx, const char *name)
 {
 	struct uci_element *e;
@@ -330,59 +274,4 @@ int uci_remove_hook(struct uci_context *ctx, const struct uci_hook_ops *ops)
 		}
 	}
 	return UCI_ERR_NOTFOUND;
-}
-
-int uci_load_plugin(struct uci_context *ctx, const char *filename)
-{
-	struct uci_plugin *p;
-	const struct uci_plugin_ops *ops;
-	void *dlh;
-
-	UCI_HANDLE_ERR(ctx);
-	dlh = dlopen(filename, RTLD_GLOBAL|RTLD_NOW);
-	if (!dlh)
-		UCI_THROW(ctx, UCI_ERR_NOTFOUND);
-
-	ops = dlsym(dlh, "uci_plugin");
-	if (!ops || !ops->attach || (ops->attach(ctx) != 0)) {
-		if (!ops)
-			fprintf(stderr, "No ops\n");
-		else if (!ops->attach)
-			fprintf(stderr, "No attach\n");
-		else
-			fprintf(stderr, "Other weirdness\n");
-		dlclose(dlh);
-		UCI_THROW(ctx, UCI_ERR_INVAL);
-	}
-
-	p = uci_alloc_element(ctx, plugin, filename, 0);
-	p->dlh = dlh;
-	p->ops = ops;
-	uci_list_add(&ctx->plugins, &p->e.list);
-
-	return 0;
-}
-
-static void uci_unload_plugin(struct uci_context *ctx, struct uci_plugin *p)
-{
-	if (p->ops->detach)
-		p->ops->detach(ctx);
-	dlclose(p->dlh);
-	uci_free_element(&p->e);
-}
-
-int uci_load_plugins(struct uci_context *ctx, const char *pattern)
-{
-	glob_t gl;
-	int i;
-
-	if (!pattern)
-		pattern = UCI_PREFIX "/lib/uci_*.so";
-
-	memset(&gl, 0, sizeof(gl));
-	glob(pattern, 0, NULL, &gl);
-	for (i = 0; i < gl.gl_pathc; i++)
-		uci_load_plugin(ctx, gl.gl_pathv[i]);
-
-	return 0;
 }

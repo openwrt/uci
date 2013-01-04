@@ -61,7 +61,6 @@ struct uci_list
 };
 
 struct uci_ptr;
-struct uci_plugin;
 struct uci_hook_ops;
 struct uci_element;
 struct uci_package;
@@ -319,25 +318,6 @@ extern int uci_add_hook(struct uci_context *ctx, const struct uci_hook_ops *ops)
 extern int uci_remove_hook(struct uci_context *ctx, const struct uci_hook_ops *ops);
 
 /**
- * uci_load_plugin: load an uci plugin
- * @ctx: uci context
- * @filename: path to the uci plugin
- *
- * NB: plugin will be unloaded automatically when the context is freed
- */
-int uci_load_plugin(struct uci_context *ctx, const char *filename);
-
-/**
- * uci_load_plugins: load all uci plugins from a directory
- * @ctx: uci context
- * @pattern: pattern of uci plugin files (optional)
- *
- * if pattern is NULL, then uci_load_plugins will call uci_load_plugin
- * for uci_*.so in <prefix>/lib/
- */
-int uci_load_plugins(struct uci_context *ctx, const char *pattern);
-
-/**
  * uci_parse_ptr: parse a uci string into a uci_ptr
  * @ctx: uci context
  * @ptr: target data structure
@@ -387,7 +367,6 @@ enum uci_type {
 	UCI_TYPE_BACKEND = 6,
 	UCI_TYPE_ITEM = 7,
 	UCI_TYPE_HOOK = 8,
-	UCI_TYPE_PLUGIN = 9,
 };
 
 enum uci_option_type {
@@ -451,7 +430,6 @@ struct uci_context
 	int bufsz;
 
 	struct uci_list hooks;
-	struct uci_list plugins;
 };
 
 struct uci_package
@@ -540,19 +518,6 @@ struct uci_hook
 	const struct uci_hook_ops *ops;
 };
 
-struct uci_plugin_ops
-{
-	int (*attach)(struct uci_context *ctx);
-	void (*detach)(struct uci_context *ctx);
-};
-
-struct uci_plugin
-{
-	struct uci_element e;
-	const struct uci_plugin_ops *ops;
-	void *dlh;
-};
-
 struct uci_parse_option {
 	const char *name;
 	enum uci_option_type type;
@@ -629,7 +594,6 @@ struct uci_parse_option {
 #define uci_type_section UCI_TYPE_SECTION
 #define uci_type_option UCI_TYPE_OPTION
 #define uci_type_hook UCI_TYPE_HOOK
-#define uci_type_plugin UCI_TYPE_PLUGIN
 
 /* element typecasting */
 #ifdef UCI_DEBUG_TYPECAST
@@ -640,7 +604,6 @@ static const char *uci_typestr[] = {
 	[uci_type_section] = "section",
 	[uci_type_option] = "option",
 	[uci_type_hook] = "hook",
-	[uci_type_plugin] = "plugin",
 };
 
 static void uci_typecast_error(int from, int to)
@@ -663,7 +626,6 @@ BUILD_CAST(package)
 BUILD_CAST(section)
 BUILD_CAST(option)
 BUILD_CAST(hook)
-BUILD_CAST(plugin)
 
 #else
 #define uci_to_backend(ptr) container_of(ptr, struct uci_backend, e)
@@ -672,7 +634,6 @@ BUILD_CAST(plugin)
 #define uci_to_section(ptr) container_of(ptr, struct uci_section, e)
 #define uci_to_option(ptr)  container_of(ptr, struct uci_option, e)
 #define uci_to_hook(ptr)    container_of(ptr, struct uci_hook, e)
-#define uci_to_plugin(ptr)  container_of(ptr, struct uci_plugin, e)
 #endif
 
 /**

@@ -31,7 +31,7 @@
 #include "uci.h"
 #include "uci_internal.h"
 
-__plugin void *uci_malloc(struct uci_context *ctx, size_t size)
+__private void *uci_malloc(struct uci_context *ctx, size_t size)
 {
 	void *ptr;
 
@@ -43,7 +43,7 @@ __plugin void *uci_malloc(struct uci_context *ctx, size_t size)
 	return ptr;
 }
 
-__plugin void *uci_realloc(struct uci_context *ctx, void *ptr, size_t size)
+__private void *uci_realloc(struct uci_context *ctx, void *ptr, size_t size)
 {
 	ptr = realloc(ptr, size);
 	if (!ptr)
@@ -52,7 +52,7 @@ __plugin void *uci_realloc(struct uci_context *ctx, void *ptr, size_t size)
 	return ptr;
 }
 
-__plugin char *uci_strdup(struct uci_context *ctx, const char *str)
+__private char *uci_strdup(struct uci_context *ctx, const char *str)
 {
 	char *ptr;
 
@@ -68,7 +68,7 @@ __plugin char *uci_strdup(struct uci_context *ctx, const char *str)
  * for names, only alphanum and _ is allowed (shell compatibility)
  * for types, we allow more characters
  */
-__plugin bool uci_validate_str(const char *str, bool name)
+__private bool uci_validate_str(const char *str, bool name)
 {
 	if (!*str)
 		return false;

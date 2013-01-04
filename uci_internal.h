@@ -17,11 +17,6 @@
 
 #define __private __attribute__((visibility("hidden")))
 #define __public
-#ifdef UCI_PLUGIN_SUPPORT
-#define __plugin extern
-#else
-#define __plugin __private
-#endif
 
 struct uci_parse_context
 {
@@ -43,13 +38,13 @@ struct uci_parse_context
 extern const char *uci_confdir;
 extern const char *uci_savedir;
 
-__plugin void *uci_malloc(struct uci_context *ctx, size_t size);
-__plugin void *uci_realloc(struct uci_context *ctx, void *ptr, size_t size);
-__plugin char *uci_strdup(struct uci_context *ctx, const char *str);
-__plugin bool uci_validate_str(const char *str, bool name);
-__plugin void uci_add_delta(struct uci_context *ctx, struct uci_list *list, int cmd, const char *section, const char *option, const char *value);
-__plugin void uci_free_delta(struct uci_delta *h);
-__plugin struct uci_package *uci_alloc_package(struct uci_context *ctx, const char *name);
+__private void *uci_malloc(struct uci_context *ctx, size_t size);
+__private void *uci_realloc(struct uci_context *ctx, void *ptr, size_t size);
+__private char *uci_strdup(struct uci_context *ctx, const char *str);
+__private bool uci_validate_str(const char *str, bool name);
+__private void uci_add_delta(struct uci_context *ctx, struct uci_list *list, int cmd, const char *section, const char *option, const char *value);
+__private void uci_free_delta(struct uci_delta *h);
+__private struct uci_package *uci_alloc_package(struct uci_context *ctx, const char *name);
 
 __private FILE *uci_open_stream(struct uci_context *ctx, const char *filename, int pos, bool write, bool create);
 __private void uci_close_stream(FILE *stream);
@@ -130,7 +125,7 @@ extern struct uci_backend uci_file_backend;
  *
  * The default backend is "file", which uses /etc/config for config storage
  */
-__plugin int uci_add_backend(struct uci_context *ctx, struct uci_backend *b);
+__private int uci_add_backend(struct uci_context *ctx, struct uci_backend *b);
 
 /**
  * uci_add_backend: add an extra backend
@@ -139,7 +134,7 @@ __plugin int uci_add_backend(struct uci_context *ctx, struct uci_backend *b);
  *
  * The default backend is "file", which uses /etc/config for config storage
  */
-__plugin int uci_del_backend(struct uci_context *ctx, struct uci_backend *b);
+__private int uci_del_backend(struct uci_context *ctx, struct uci_backend *b);
 #endif
 
 #define UCI_BACKEND(_var, _name, ...)	\

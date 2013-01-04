@@ -6,10 +6,9 @@ SET(CMAKE_INSTALL_PREFIX /usr)
 
 ADD_DEFINITIONS(-Os -Wall -Werror --std=gnu99 -g3 -I. -DUCI_PREFIX="${CMAKE_INSTALL_PREFIX}")
 
-OPTION(UCI_PLUGIN_SUPPORT "plugin support" ON)
 OPTION(UCI_DEBUG "debugging support" OFF)
 OPTION(UCI_DEBUG_TYPECAST "typecast debugging support" OFF)
-OPTION(BUILD_LUA "build Lua plugin" ON)
+OPTION(BUILD_LUA "build Lua binding" ON)
 
 CONFIGURE_FILE( ${CMAKE_SOURCE_DIR}/uci_config.h.in ${CMAKE_SOURCE_DIR}/uci_config.h )
 

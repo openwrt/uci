@@ -863,20 +863,6 @@ uci_lua_add_delta(lua_State *L)
 }
 
 static int
-uci_lua_load_plugins(lua_State *L)
-{
-	struct uci_context *ctx;
-	int offset = 0;
-	const char *str = NULL;
-
-	ctx = find_context(L, &offset);
-	if (lua_isstring(L, -1))
-		str = lua_tostring(L, -1);
-	uci_load_plugins(ctx, str);
-	return uci_push_status(L, ctx, false);
-}
-
-static int
 uci_lua_set_savedir(lua_State *L)
 {
 	struct uci_context *ctx;
@@ -945,7 +931,6 @@ static const luaL_Reg uci[] = {
 	{ "foreach", uci_lua_foreach },
 	{ "add_history", uci_lua_add_delta },
 	{ "add_delta", uci_lua_add_delta },
-	{ "load_plugins", uci_lua_load_plugins },
 	{ "get_confdir", uci_lua_get_confdir },
 	{ "set_confdir", uci_lua_set_confdir },
 	{ "get_savedir", uci_lua_get_savedir },
