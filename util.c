@@ -182,17 +182,30 @@ __private FILE *uci_open_stream(struct uci_context *ctx, const char *filename, i
 	struct stat statbuf;
 	FILE *file = NULL;
 	int fd, ret;
-	int mode = (write ? O_RDWR : O_RDONLY);
+	int flags = (write ? O_RDWR : O_RDONLY);
+	mode_t mode = UCI_FILEMODE;
+	char *name = NULL;
+	char *filename2 = NULL;
 
-	if (create)
-		mode |= O_CREAT;
+	if (create) {
+		flags |= O_CREAT;
+		name = basename(filename);
+		if ((asprintf(&filename2, "%s/%s", ctx->confdir, name) < 0) || !filename2) {
+			UCI_THROW(ctx, UCI_ERR_MEM);
+		} else {
+			if (stat(filename2,&statbuf) == 0)
+				mode = statbuf.st_mode;
+
+			free(filename2);
+		}
+	}
 
 	if (!write && ((stat(filename, &statbuf) < 0) ||
 		((statbuf.st_mode &  S_IFMT) != S_IFREG))) {
 		UCI_THROW(ctx, UCI_ERR_NOTFOUND);
 	}
 
-	fd = open(filename, mode, UCI_FILEMODE);
+	fd = open(filename, flags, mode);
 	if (fd < 0)
 		goto error;
 

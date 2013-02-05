@@ -425,10 +425,15 @@ int uci_save(struct uci_context *ctx, struct uci_package *p)
 	if (uci_list_empty(&p->delta))
 		return 0;
 
-	if (stat(ctx->savedir, &statbuf) < 0)
-		mkdir(ctx->savedir, UCI_DIRMODE);
-	else if ((statbuf.st_mode & S_IFMT) != S_IFDIR)
+	if (stat(ctx->savedir, &statbuf) < 0) {
+		if (stat(ctx->confdir, &statbuf) == 0) {
+			mkdir(ctx->savedir, statbuf.st_mode);
+		} else {
+			mkdir(ctx->savedir, UCI_DIRMODE);
+		}
+	} else if ((statbuf.st_mode & S_IFMT) != S_IFDIR) {
 		UCI_THROW(ctx, UCI_ERR_IO);
+	}
 
 	if ((asprintf(&filename, "%s/%s", ctx->savedir, p->e.name) < 0) || !filename)
 		UCI_THROW(ctx, UCI_ERR_MEM);
