@@ -364,6 +364,8 @@ uci_lua_get_any(lua_State *L, bool all)
 			err = UCI_ERR_INVAL;
 			goto error;
 	}
+	if (s)
+		free(s);
 	if (!err)
 		return 1;
 
@@ -484,6 +486,8 @@ uci_lua_rename(lua_State *L)
 		goto error;
 
 error:
+	if (s)
+		free(s);
 	return uci_push_status(L, ctx, false);
 }
 
@@ -533,6 +537,8 @@ uci_lua_reorder(lua_State *L)
 		goto error;
 
 error:
+	if (s)
+		free(s);
 	return uci_push_status(L, ctx, false);
 }
 
@@ -616,6 +622,8 @@ uci_lua_set(lua_State *L)
 
 
 error:
+	if (s)
+		free(s);
 	return uci_push_status(L, ctx, false);
 }
 
@@ -665,6 +673,8 @@ uci_lua_package_cmd(lua_State *L, enum pkg_cmd cmd)
 	}
 
 err:
+	if (s)
+		free(s);
 	return uci_push_status(L, ctx, false);
 }
 
