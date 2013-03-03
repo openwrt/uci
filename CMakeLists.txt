@@ -11,6 +11,8 @@ OPTION(BUILD_LUA "build Lua binding" ON)
 
 CONFIGURE_FILE( ${CMAKE_SOURCE_DIR}/uci_config.h.in ${CMAKE_SOURCE_DIR}/uci_config.h )
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
 SET(LIB_SOURCES libuci.c file.c util.c delta.c parse.c)
 
 ADD_LIBRARY(uci SHARED ${LIB_SOURCES})
