@@ -60,7 +60,10 @@ __private void uci_getln(struct uci_context *ctx, int offset)
 		ofs += strlen(p);
 		if (pctx->buf[ofs - 1] == '\n') {
 			pctx->line++;
-			pctx->buf[ofs - 1] = 0;
+			if (ofs >= 2 && pctx->buf[ofs - 2] == '\r')
+				pctx->buf[ofs - 2] = 0;
+			else
+				pctx->buf[ofs - 1] = 0;
 			return;
 		}
 
