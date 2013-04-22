@@ -114,7 +114,7 @@ static inline int uci_parse_delta_tuple(struct uci_context *ctx, char **buf, str
 	case '|':
 		c = UCI_CMD_LIST_ADD;
 		break;
-	case '_':
+	case '~':
 		c = UCI_CMD_LIST_DEL;
 		break;
 	}
@@ -459,7 +459,7 @@ int uci_save(struct uci_context *ctx, struct uci_package *p)
 			prefix = "|";
 			break;
 		case UCI_CMD_LIST_DEL:
-			prefix = "_";
+			prefix = "~";
 			break;
 		default:
 			break;
