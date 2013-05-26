@@ -551,6 +551,7 @@ uci_lua_set(lua_State *L)
 	bool istable = false;
 	int err = UCI_ERR_MEM;
 	char *s = NULL;
+	const char *v;
 	int i, nargs, offset = 0;
 
 	ctx = find_context(L, &offset);
@@ -597,8 +598,14 @@ uci_lua_set(lua_State *L)
 	if (istable) {
 		if (lua_objlen(L, nargs) == 1) {
 			i = 1;
-			if (ptr.o)
+			if (ptr.o) {
+				v = ptr.value;
+				ptr.value = NULL;
 				err = uci_delete(ctx, &ptr);
+				if (err)
+					goto error;
+				ptr.value = v;
+			}
 		} else {
 			i = 2;
 			err = uci_set(ctx, &ptr);
