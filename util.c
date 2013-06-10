@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 
 #include "uci.h"
 #include "uci_internal.h"
@@ -189,7 +190,7 @@ __private FILE *uci_open_stream(struct uci_context *ctx, const char *filename, i
 
 	if (create) {
 		flags |= O_CREAT;
-		name = basename(filename);
+		name = basename((char *) filename);
 		if ((asprintf(&filename2, "%s/%s", ctx->confdir, name) < 0) || !filename2) {
 			UCI_THROW(ctx, UCI_ERR_MEM);
 		} else {
