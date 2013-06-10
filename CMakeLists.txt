@@ -13,9 +13,10 @@ CONFIGURE_FILE( ${CMAKE_SOURCE_DIR}/uci_config.h.in ${CMAKE_SOURCE_DIR}/uci_conf
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-SET(LIB_SOURCES libuci.c file.c util.c delta.c parse.c)
+SET(LIB_SOURCES libuci.c file.c util.c delta.c parse.c blob.c)
 
 ADD_LIBRARY(uci SHARED ${LIB_SOURCES})
+TARGET_LINK_LIBRARIES(uci ubox)
 SET_TARGET_PROPERTIES(uci PROPERTIES OUTPUT_NAME uci)
 
 ADD_EXECUTABLE(cli cli.c)
@@ -29,7 +30,7 @@ TARGET_LINK_LIBRARIES(ucimap-example uci ucimap)
 
 ADD_SUBDIRECTORY(lua)
 
-INSTALL(FILES uci.h uci_config.h ucimap.h
+INSTALL(FILES uci.h uci_config.h uci_blob.h ucimap.h
 	DESTINATION include
 )
 
