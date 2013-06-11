@@ -515,12 +515,13 @@ int uci_rename(struct uci_context *ctx, struct uci_ptr *ptr)
 int uci_reorder_section(struct uci_context *ctx, struct uci_section *s, int pos)
 {
 	struct uci_package *p = s->package;
+	bool internal = ctx && ctx->internal;
 	char order[32];
 
 	UCI_HANDLE_ERR(ctx);
 
 	uci_list_set_pos(&s->package->sections, &s->e.list, pos);
-	if (!ctx->internal && p->has_delta) {
+	if (!internal && p->has_delta) {
 		sprintf(order, "%d", pos);
 		uci_add_delta(ctx, &p->delta, UCI_CMD_REORDER, s->e.name, NULL, order);
 	}
