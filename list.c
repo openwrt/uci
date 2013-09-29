@@ -560,7 +560,7 @@ int uci_delete(struct uci_context *ctx, struct uci_ptr *ptr)
 
 	UCI_ASSERT(ctx, ptr->s);
 
-	if (ptr->value && *ptr->value && ptr->o && ptr->o->type == UCI_TYPE_LIST) {
+	if (ptr->o && ptr->o->type == UCI_TYPE_LIST && ptr->value && *ptr->value) {
 		if (!sscanf(ptr->value, "%d", &index))
 			return 1;
 
