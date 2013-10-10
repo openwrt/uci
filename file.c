@@ -18,6 +18,7 @@
 
 #define _GNU_SOURCE
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/file.h>
 #include <stdbool.h>
 #include <unistd.h>
@@ -203,7 +204,7 @@ static void parse_str(struct uci_context *ctx, char **str, char **target)
 	} while (**str && !isspace(**str));
 done:
 
-	/* 
+	/*
 	 * if the string was unquoted and we've stopped at a whitespace
 	 * character, skip to the next one, because the whitespace will
 	 * be overwritten by a null byte here
@@ -319,7 +320,7 @@ static void assert_eol(struct uci_context *ctx, char **str)
 		uci_parse_error(ctx, *str, "too many arguments");
 }
 
-/* 
+/*
  * switch to a different config, either triggered by uci_load, or by a
  * 'package <...>' statement in the import file
  */
@@ -344,7 +345,7 @@ static void uci_switch_config(struct uci_context *ctx)
 	if (!name)
 		return;
 
-	/* 
+	/*
 	 * if an older config under the same name exists, unload it
 	 * ignore errors here, e.g. if the config was not found
 	 */
@@ -684,9 +685,12 @@ static char *uci_config_path(struct uci_context *ctx, const char *name)
 static void uci_file_commit(struct uci_context *ctx, struct uci_package **package, bool overwrite)
 {
 	struct uci_package *p = *package;
-	FILE *f = NULL;
+	FILE *f1, *f2 = NULL;
 	char *name = NULL;
 	char *path = NULL;
+	char *filename = NULL;
+	struct stat statbuf;
+	bool do_rename = false;
 
 	if (!p->path) {
 		if (overwrite)
@@ -695,8 +699,18 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 			UCI_THROW(ctx, UCI_ERR_INVAL);
 	}
 
+	if ((asprintf(&filename, "%s/.%s.uci-XXXXXX", ctx->confdir, p->e.name) < 0) || !filename)
+		UCI_THROW(ctx, UCI_ERR_MEM);
+
+	mktemp(filename);
+	if (!*filename)
+		UCI_THROW(ctx, UCI_ERR_IO);
+
+	if ((stat(filename, &statbuf) == 0) && ((statbuf.st_mode & S_IFMT) != S_IFREG))
+		UCI_THROW(ctx, UCI_ERR_IO);
+
 	/* open the config file for writing now, so that it is locked */
-	f = uci_open_stream(ctx, p->path, SEEK_SET, true, true);
+	f1 = uci_open_stream(ctx, p->path, SEEK_SET, false, false);
 
 	/* flush unsaved changes and reload from delta file */
 	UCI_TRAP_SAVE(ctx, done);
@@ -708,13 +722,13 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 			if (!uci_list_empty(&p->delta))
 				UCI_INTERNAL(uci_save, ctx, p);
 
-			/* 
-			 * other processes might have modified the config 
-			 * as well. dump and reload 
+			/*
+			 * other processes might have modified the config
+			 * as well. dump and reload
 			 */
 			uci_free_package(&p);
 			uci_cleanup(ctx);
-			UCI_INTERNAL(uci_import, ctx, f, name, &p, true);
+			UCI_INTERNAL(uci_import, ctx, f1, name, &p, true);
 
 			p->path = path;
 			p->has_delta = true;
@@ -729,11 +743,15 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 			goto done;
 	}
 
-	rewind(f);
-	if (ftruncate(fileno(f), 0) < 0)
-		UCI_THROW(ctx, UCI_ERR_IO);
+	f2 = uci_open_stream(ctx, filename, SEEK_SET, true, true);
+	uci_export(ctx, f2, p, false);
 
-	uci_export(ctx, f, p, false);
+	fflush(f2);
+	fsync(fileno(f2));
+	uci_close_stream(f2);
+
+	do_rename = true;
+
 	UCI_TRAP_RESTORE(ctx);
 
 done:
@@ -741,13 +759,19 @@ done:
 		free(name);
 	if (path)
 		free(path);
-	uci_close_stream(f);
+	uci_close_stream(f1);
+	if (do_rename && rename(filename, p->path)) {
+		unlink(filename);
+		UCI_THROW(ctx, UCI_ERR_IO);
+	}
+	free(filename);
+	sync();
 	if (ctx->err)
 		UCI_THROW(ctx, ctx->err);
 }
 
 
-/* 
+/*
  * This function returns the filename by returning the string
  * after the last '/' character. By checking for a non-'\0'
  * character afterwards, directories are ignored (glob marks

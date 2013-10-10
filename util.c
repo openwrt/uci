@@ -194,7 +194,7 @@ __private FILE *uci_open_stream(struct uci_context *ctx, const char *filename, i
 		if ((asprintf(&filename2, "%s/%s", ctx->confdir, name) < 0) || !filename2) {
 			UCI_THROW(ctx, UCI_ERR_MEM);
 		} else {
-			if (stat(filename2,&statbuf) == 0)
+			if (stat(filename2, &statbuf) == 0)
 				mode = statbuf.st_mode;
 
 			free(filename2);
@@ -202,7 +202,7 @@ __private FILE *uci_open_stream(struct uci_context *ctx, const char *filename, i
 	}
 
 	if (!write && ((stat(filename, &statbuf) < 0) ||
-		((statbuf.st_mode &  S_IFMT) != S_IFREG))) {
+		((statbuf.st_mode & S_IFMT) != S_IFREG))) {
 		UCI_THROW(ctx, UCI_ERR_NOTFOUND);
 	}
 
