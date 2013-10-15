@@ -529,8 +529,7 @@ static int uci_batch_cmd(void)
 		return 0;
 
 	for (j = 0; j < i; j++) {
-		if (argv[j])
-			free(argv[j]);
+		free(argv[j]);
 	}
 
 	return ret;

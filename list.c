@@ -66,8 +66,7 @@ done:
 __private void
 uci_free_element(struct uci_element *e)
 {
-	if (e->name)
-		free(e->name);
+	free(e->name);
 	if (!uci_list_empty(&e->list))
 		uci_list_del(&e->list);
 	free(e);
@@ -239,8 +238,7 @@ uci_free_package(struct uci_package **package)
 	if(!p)
 		return;
 
-	if (p->path)
-		free(p->path);
+	free(p->path);
 	uci_foreach_element_safe(&p->sections, tmp, e) {
 		uci_free_section(uci_to_section(e));
 	}
@@ -502,8 +500,7 @@ int uci_rename(struct uci_context *ctx, struct uci_ptr *ptr)
 		uci_add_delta(ctx, &p->delta, UCI_CMD_RENAME, ptr->section, ptr->option, ptr->value);
 
 	n = uci_strdup(ctx, ptr->value);
-	if (e->name)
-		free(e->name);
+	free(e->name);
 	e->name = n;
 
 	if (e->type == UCI_TYPE_SECTION)

@@ -755,10 +755,8 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 	UCI_TRAP_RESTORE(ctx);
 
 done:
-	if (name)
-		free(name);
-	if (path)
-		free(path);
+	free(name);
+	free(path);
 	uci_close_stream(f1);
 	if (do_rename && rename(filename, p->path)) {
 		unlink(filename);

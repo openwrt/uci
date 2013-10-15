@@ -282,8 +282,7 @@ __private int uci_load_delta(struct uci_context *ctx, struct uci_package *p, boo
 			UCI_THROW(ctx, UCI_ERR_IO);
 		}
 	}
-	if (filename)
-		free(filename);
+	free(filename);
 	uci_close_stream(f);
 	ctx->err = 0;
 	return changes;
@@ -347,8 +346,7 @@ static void uci_filter_delta(struct uci_context *ctx, const char *name, const ch
 	UCI_TRAP_RESTORE(ctx);
 
 done:
-	if (filename)
-		free(filename);
+	free(filename);
 	uci_close_stream(pctx->file);
 	uci_foreach_element_safe(&list, tmp, e) {
 		uci_free_element(e);
@@ -392,12 +390,9 @@ int uci_revert(struct uci_context *ctx, struct uci_ptr *ptr)
 	ctx->err = 0;
 
 error:
-	if (package)
-		free(package);
-	if (section)
-		free(section);
-	if (option)
-		free(option);
+	free(package);
+	free(section);
+	free(option);
 	if (ctx->err)
 		UCI_THROW(ctx, ctx->err);
 	return 0;
@@ -483,8 +478,7 @@ int uci_save(struct uci_context *ctx, struct uci_package *p)
 
 done:
 	uci_close_stream(f);
-	if (filename)
-		free(filename);
+	free(filename);
 	if (ctx->err)
 		UCI_THROW(ctx, ctx->err);
 
