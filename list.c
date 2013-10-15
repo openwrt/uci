@@ -33,7 +33,7 @@ static inline void uci_list_fixup(struct uci_list *ptr)
 	ptr->next->prev = ptr;
 }
 
-/* 
+/*
  * uci_alloc_generic allocates a new uci_element with payload
  * payload is appended to the struct to save memory and reduce fragmentation
  */
@@ -318,7 +318,7 @@ uci_lookup_ext_section(struct uci_context *ctx, struct uci_ptr *ptr)
 	else if (!uci_validate_type(name))
 		goto error;
 
-	/* if the given index is negative, it specifies the section number from 
+	/* if the given index is negative, it specifies the section number from
 	 * the end of the list */
 	if (idx < 0) {
 		c = 0;

@@ -160,7 +160,7 @@ struct uci_backend _var = {		\
 #define DPRINTF(...)
 #endif
 
-/* 
+/*
  * throw an uci exception and store the error number
  * in the context.
  */
@@ -217,7 +217,7 @@ struct uci_backend _var = {		\
 
 /**
  * UCI_INTERNAL: Do an internal call of a public API function
- * 
+ *
  * Sets Exception handling to passthrough mode.
  * Allows API functions to change behavior compared to public use
  */
@@ -228,7 +228,7 @@ struct uci_backend _var = {		\
 
 /**
  * UCI_NESTED: Do an normal nested call of a public API function
- * 
+ *
  * Sets Exception handling to passthrough mode.
  * Allows API functions to change behavior compared to public use
  */

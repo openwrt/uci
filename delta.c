@@ -316,8 +316,8 @@ static void uci_filter_delta(struct uci_context *ctx, const char *name, const ch
 		if (!buf[0])
 			continue;
 
-		/* NB: need to allocate the element before the call to 
-		 * uci_parse_delta_tuple, otherwise the original string 
+		/* NB: need to allocate the element before the call to
+		 * uci_parse_delta_tuple, otherwise the original string
 		 * gets modified before it is saved */
 		e = uci_alloc_generic(ctx, UCI_TYPE_DELTA, pctx->buf, sizeof(struct uci_element));
 		uci_list_add(&list, &e->list);
@@ -364,7 +364,7 @@ int uci_revert(struct uci_context *ctx, struct uci_ptr *ptr)
 	uci_expand_ptr(ctx, ptr, false);
 	UCI_ASSERT(ctx, ptr->p->has_delta);
 
-	/* 
+	/*
 	 * - flush unwritten changes
 	 * - save the package name
 	 * - unload the package
@@ -374,7 +374,7 @@ int uci_revert(struct uci_context *ctx, struct uci_ptr *ptr)
 	UCI_TRAP_SAVE(ctx, error);
 	UCI_INTERNAL(uci_save, ctx, ptr->p);
 
-	/* NB: need to clone package, section and option names, 
+	/* NB: need to clone package, section and option names,
 	 * as they may get freed on uci_free_package() */
 	package = uci_strdup(ctx, ptr->p->e.name);
 	if (ptr->section)
@@ -408,7 +408,7 @@ int uci_save(struct uci_context *ctx, struct uci_package *p)
 	UCI_HANDLE_ERR(ctx);
 	UCI_ASSERT(ctx, p != NULL);
 
-	/* 
+	/*
 	 * if the config file was outside of the /etc/config path,
 	 * don't save the delta to a file, update the real file
 	 * directly.

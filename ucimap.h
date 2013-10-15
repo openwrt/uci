@@ -13,7 +13,7 @@
  */
 
 /*
- * This file contains ucimap, an API for mapping UCI to C data structures 
+ * This file contains ucimap, an API for mapping UCI to C data structures
  */
 
 #ifndef __UCIMAP_H
