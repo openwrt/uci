@@ -702,7 +702,9 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 	if ((asprintf(&filename, "%s/.%s.uci-XXXXXX", ctx->confdir, p->e.name) < 0) || !filename)
 		UCI_THROW(ctx, UCI_ERR_MEM);
 
-	mktemp(filename);
+	if (!mktemp(filename))
+		*filename = 0;
+
 	if (!*filename) {
 		free(filename);
 		UCI_THROW(ctx, UCI_ERR_IO);
