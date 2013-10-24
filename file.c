@@ -703,8 +703,10 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 		UCI_THROW(ctx, UCI_ERR_MEM);
 
 	mktemp(filename);
-	if (!*filename)
+	if (!*filename) {
+		free(filename);
 		UCI_THROW(ctx, UCI_ERR_IO);
+	}
 
 	if ((stat(filename, &statbuf) == 0) && ((statbuf.st_mode & S_IFMT) != S_IFREG))
 		UCI_THROW(ctx, UCI_ERR_IO);
