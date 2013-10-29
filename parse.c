@@ -35,7 +35,7 @@ void uci_parse_section(struct uci_section *s, const struct uci_parse_option *opt
 			if (strcmp(opts[i].name, o->e.name) != 0)
 				continue;
 
-			if (opts[i].type >= 0 && opts[i].type != o->type)
+			if (opts[i].type != o->type)
 				continue;
 
 			/* match found */
