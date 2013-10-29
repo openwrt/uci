@@ -151,7 +151,6 @@ static struct my_optmap network_interface_options[] = {
 		.map = {
 			UCIMAP_OPTION(struct uci_network, proto),
 			.type = UCIMAP_STRING,
-			.name = "proto",
 			.data.s.maxlen = 32,
 		}
 	},
@@ -159,14 +158,12 @@ static struct my_optmap network_interface_options[] = {
 		.map = {
 			UCIMAP_OPTION(struct uci_network, ifname),
 			.type = UCIMAP_STRING,
-			.name = "ifname"
 		}
 	},
 	{
 		.map = {
 			UCIMAP_OPTION(struct uci_network, ipaddr),
 			.type = UCIMAP_CUSTOM,
-			.name = "ipaddr",
 			.parse = network_parse_ip,
 			.format = network_format_ip,
 			.free = network_free_ip,
@@ -176,14 +173,12 @@ static struct my_optmap network_interface_options[] = {
 		.map = {
 			UCIMAP_OPTION(struct uci_network, enabled),
 			.type = UCIMAP_BOOL,
-			.name = "enabled",
 		}
 	},
 	{
 		.map = {
 			UCIMAP_OPTION(struct uci_network, test),
 			.type = UCIMAP_INT,
-			.name = "test"
 		}
 	},
 	{
