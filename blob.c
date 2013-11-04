@@ -81,26 +81,28 @@ uci_array_to_blob(struct blob_buf *b, struct uci_option *o,
 }
 
 static int
-__uci_to_blob(struct blob_buf *b, struct uci_section *s,
-	      const struct uci_blob_param_list *p)
+__uci_element_to_blob(struct blob_buf *b, struct uci_element *e,
+		      const struct uci_blob_param_list *p)
 {
 	const struct blobmsg_policy *attr = NULL;
-	struct uci_element *e;
-	struct uci_option *o;
+	struct uci_option *o = uci_to_option(e);
+	unsigned int types = 0;
 	void *array;
 	int i, ret = 0;
 
-	uci_foreach_element(&s->options, e) {
-		for (i = 0; i < p->n_params; i++) {
-			attr = &p->params[i];
-			if (!strcmp(attr->name, e->name))
-				break;
-		}
+	for (i = 0; i < p->n_params; i++) {
+		attr = &p->params[i];
 
-		if (i == p->n_params)
+		if (strcmp(attr->name, e->name) != 0)
 			continue;
 
-		o = uci_to_option(e);
+		if (attr->type > BLOBMSG_TYPE_LAST)
+			continue;
+
+		if (types & (1 << attr->type))
+			continue;
+
+		types |= 1 << attr->type;
 
 		if (attr->type == BLOBMSG_TYPE_ARRAY) {
 			if (!p->info)
@@ -118,6 +120,18 @@ __uci_to_blob(struct blob_buf *b, struct uci_section *s,
 
 		ret += uci_attr_to_blob(b, o->v.string, attr->name, attr->type);
 	}
+	return ret;
+}
+
+static int
+__uci_to_blob(struct blob_buf *b, struct uci_section *s,
+	      const struct uci_blob_param_list *p)
+{
+	struct uci_element *e;
+	int ret = 0;
+
+	uci_foreach_element(&s->options, e)
+		ret += __uci_element_to_blob(b, e, p);
 
 	return ret;
 }
