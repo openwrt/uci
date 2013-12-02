@@ -105,11 +105,16 @@ __uci_element_to_blob(struct blob_buf *b, struct uci_element *e,
 		types |= 1 << attr->type;
 
 		if (attr->type == BLOBMSG_TYPE_ARRAY) {
-			if (!p->info)
-				continue;
+			int element_type = 0;
+
+			if (p->info)
+				element_type = p->info[i].type;
+
+			if (!element_type)
+				element_type = BLOBMSG_TYPE_STRING;
 
 			array = blobmsg_open_array(b, attr->name);
-			uci_array_to_blob(b, o, p->info[i].type);
+			uci_array_to_blob(b, o, element_type);
 			blobmsg_close_array(b, array);
 			ret++;
 			continue;
