@@ -25,9 +25,6 @@ TARGET_LINK_LIBRARIES(cli uci)
 
 ADD_LIBRARY(ucimap STATIC ucimap.c)
 
-ADD_EXECUTABLE(ucimap-example ucimap-example.c)
-TARGET_LINK_LIBRARIES(ucimap-example uci ucimap)
-
 ADD_SUBDIRECTORY(lua)
 
 INSTALL(FILES uci.h uci_config.h uci_blob.h ucimap.h
