@@ -25,6 +25,7 @@ struct uci_blob_param_list {
 	int n_params;
 	const struct blobmsg_policy *params;
 	const struct uci_blob_param_info *info;
+	const char * const *validate;
 
 	int n_next;
 	const struct uci_blob_param_list *next[];
