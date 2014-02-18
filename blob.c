@@ -25,6 +25,7 @@ uci_attr_to_blob(struct blob_buf *b, const char *str,
 {
 	char *err;
 	int intval;
+	long long llval;
 
 	switch (type) {
 	case BLOBMSG_TYPE_STRING:
@@ -46,6 +47,13 @@ uci_attr_to_blob(struct blob_buf *b, const char *str,
 			return false;
 
 		blobmsg_add_u32(b, name, intval);
+		break;
+	case BLOBMSG_TYPE_INT64:
+		llval = strtoll(str, &err, 0);
+		if (*err)
+			return false;
+
+		blobmsg_add_u64(b, name, llval);
 		break;
 	default:
 		return false;
