@@ -714,7 +714,7 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 		UCI_THROW(ctx, UCI_ERR_IO);
 
 	/* open the config file for writing now, so that it is locked */
-	f1 = uci_open_stream(ctx, p->path, SEEK_SET, false, false);
+	f1 = uci_open_stream(ctx, p->path, SEEK_SET, true, true);
 
 	/* flush unsaved changes and reload from delta file */
 	UCI_TRAP_SAVE(ctx, done);
