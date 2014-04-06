@@ -36,7 +36,7 @@ IF(NOT LUAPATH)
 	)
 
 	IF(BUILD_LUA)
-		IF(NOT ${LUA_CHECK_RES} EQUAL 0 OR ${LUAPATH} EQUAL "")
+		IF(NOT ${LUA_CHECK_RES} EQUAL 0 OR "${LUAPATH}" EQUAL "")
 			MESSAGE(SEND_ERROR "Lua was not found on your system")
 		ENDIF()
 	ENDIF()
