@@ -178,7 +178,7 @@ __private void uci_parse_error(struct uci_context *ctx, char *pos, char *reason)
  * note: when opening for write and seeking to the beginning of
  * the stream, truncate the file
  */
-__private FILE *uci_open_stream(struct uci_context *ctx, const char *filename, int pos, bool write, bool create)
+__private FILE *uci_open_stream(struct uci_context *ctx, const char *filename, const char *origfilename, int pos, bool write, bool create)
 {
 	struct stat statbuf;
 	FILE *file = NULL;
@@ -190,7 +190,11 @@ __private FILE *uci_open_stream(struct uci_context *ctx, const char *filename, i
 
 	if (create) {
 		flags |= O_CREAT;
-		name = basename((char *) filename);
+		if (origfilename) {
+			name = basename((char *) origfilename);
+		} else {
+			name = basename((char *) filename);
+		}
 		if ((asprintf(&filename2, "%s/%s", ctx->confdir, name) < 0) || !filename2) {
 			UCI_THROW(ctx, UCI_ERR_MEM);
 		} else {

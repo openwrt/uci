@@ -240,7 +240,7 @@ static int uci_load_delta_file(struct uci_context *ctx, struct uci_package *p, c
 	int changes = 0;
 
 	UCI_TRAP_SAVE(ctx, done);
-	stream = uci_open_stream(ctx, filename, SEEK_SET, flush, false);
+	stream = uci_open_stream(ctx, filename, NULL, SEEK_SET, flush, false);
 	if (p)
 		changes = uci_parse_delta(ctx, stream, p);
 	UCI_TRAP_RESTORE(ctx);
@@ -305,7 +305,7 @@ static void uci_filter_delta(struct uci_context *ctx, const char *name, const ch
 		UCI_THROW(ctx, UCI_ERR_MEM);
 
 	UCI_TRAP_SAVE(ctx, done);
-	f = uci_open_stream(ctx, filename, SEEK_SET, true, false);
+	f = uci_open_stream(ctx, filename, NULL, SEEK_SET, true, false);
 	pctx->file = f;
 	while (!feof(f)) {
 		struct uci_element *e;
@@ -435,7 +435,7 @@ int uci_save(struct uci_context *ctx, struct uci_package *p)
 
 	ctx->err = 0;
 	UCI_TRAP_SAVE(ctx, done);
-	f = uci_open_stream(ctx, filename, SEEK_END, true, true);
+	f = uci_open_stream(ctx, filename, NULL, SEEK_END, true, true);
 	UCI_TRAP_RESTORE(ctx);
 
 	uci_foreach_element_safe(&p->delta, tmp, e) {
