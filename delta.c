@@ -471,8 +471,19 @@ int uci_save(struct uci_context *ctx, struct uci_package *p)
 
 		if (h->cmd == UCI_CMD_REMOVE && !h->value)
 			fprintf(f, "\n");
-		else
-			fprintf(f, "=%s\n", h->value);
+		else {
+			int i;
+
+			fprintf(f, "='");
+			for (i = 0; h->value[i]; i++) {
+				unsigned char c = h->value[i];
+				if (c != '\'')
+					fputc(c, f);
+				else
+					fprintf(f, "'\\''");
+			}
+			fprintf(f, "'\n");
+		}
 		uci_free_delta(h);
 	}
 

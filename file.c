@@ -48,11 +48,16 @@ __private void uci_getln(struct uci_context *ctx, int offset)
 		pctx->buf = uci_malloc(ctx, LINEBUF);
 		pctx->bufsz = LINEBUF;
 	}
+	/* `offset' may off by one */
+	if (offset >= pctx->bufsz) {
+		pctx->bufsz *= 2;
+		pctx->buf = uci_realloc(ctx, pctx->buf, pctx->bufsz);
+	}
 
 	ofs = offset;
 	do {
 		p = &pctx->buf[ofs];
-		p[ofs] = 0;
+		p[0] = 0;
 
 		p = fgets(p, pctx->bufsz - ofs, pctx->file);
 		if (!p || !*p)
@@ -61,36 +66,36 @@ __private void uci_getln(struct uci_context *ctx, int offset)
 		ofs += strlen(p);
 		if (pctx->buf[ofs - 1] == '\n') {
 			pctx->line++;
-			if (ofs >= 2 && pctx->buf[ofs - 2] == '\r')
-				pctx->buf[ofs - 2] = 0;
-			else
-				pctx->buf[ofs - 1] = 0;
 			return;
 		}
 
 		if (pctx->bufsz > LINEBUF_MAX/2)
-			uci_parse_error(ctx, p, "line too long");
+			uci_parse_error(ctx, "line too long");
 
 		pctx->bufsz *= 2;
 		pctx->buf = uci_realloc(ctx, pctx->buf, pctx->bufsz);
 	} while (1);
 }
 
-
 /*
  * parse a character escaped by '\'
  * returns true if the escaped character is to be parsed
  * returns false if the escaped character is to be ignored
  */
-static inline bool parse_backslash(struct uci_context *ctx, char **str)
+static bool parse_backslash(struct uci_context *ctx)
 {
+	struct uci_parse_context *pctx = ctx->pctx;
+
 	/* skip backslash */
-	*str += 1;
+	pctx->pos += 1;
 
 	/* undecoded backslash at the end of line, fetch the next line */
-	if (!**str) {
-		*str += 1;
-		uci_getln(ctx, *str - ctx->pctx->buf);
+	if (!pctx_cur_char(pctx)
+		    || pctx_cur_char(pctx) == '\n'
+		    || (pctx_cur_char(pctx) == '\r' &&
+			pctx_char(pctx, pctx_pos(pctx) + 1) == '\n' &&
+			!pctx_char(pctx, pctx_pos(pctx) + 2))) {
+		uci_getln(ctx, pctx->pos);
 		return false;
 	}
 
@@ -102,91 +107,106 @@ static inline bool parse_backslash(struct uci_context *ctx, char **str)
  * move the string pointer forward until a non-whitespace character or
  * EOL is reached
  */
-static void skip_whitespace(struct uci_context *ctx, char **str)
+static void skip_whitespace(struct uci_context *ctx)
 {
-restart:
-	while (**str && isspace(**str))
-		*str += 1;
+	struct uci_parse_context *pctx = ctx->pctx;
 
-	if (**str == '\\') {
-		if (!parse_backslash(ctx, str))
-			goto restart;
-	}
+	while (pctx_cur_char(pctx) && isspace(pctx_cur_char(pctx)))
+		pctx->pos += 1;
 }
 
-static inline void addc(char **dest, char **src)
+static inline void addc(struct uci_context *ctx, int *pos_dest, int *pos_src)
 {
-	**dest = **src;
-	*dest += 1;
-	*src += 1;
+	struct uci_parse_context *pctx = ctx->pctx;
+
+	pctx_char(pctx, *pos_dest) = pctx_char(pctx, *pos_src);
+	*pos_dest += 1;
+	*pos_src += 1;
 }
 
 /*
  * parse a double quoted string argument from the command line
  */
-static void parse_double_quote(struct uci_context *ctx, char **str, char **target)
+static void parse_double_quote(struct uci_context *ctx, int *target)
 {
+	struct uci_parse_context *pctx = ctx->pctx;
 	char c;
 
 	/* skip quote character */
-	*str += 1;
+	pctx->pos += 1;
 
-	while ((c = **str)) {
+	while (1) {
+		c = pctx_cur_char(pctx);
 		switch(c) {
 		case '"':
-			**target = 0;
-			*str += 1;
+			pctx->pos += 1;
 			return;
+		case 0:
+			/* Multi-line str value */
+			uci_getln(ctx, pctx->pos);
+			if (!pctx_cur_char(pctx)) {
+				uci_parse_error(ctx, "EOF with unterminated \"");
+			}
+			break;
 		case '\\':
-			if (!parse_backslash(ctx, str))
+			if (!parse_backslash(ctx))
 				continue;
 			/* fall through */
 		default:
-			addc(target, str);
+			addc(ctx, target, &pctx->pos);
 			break;
 		}
 	}
-	uci_parse_error(ctx, *str, "unterminated \"");
+	uci_parse_error(ctx, "unterminated \"");
 }
 
 /*
  * parse a single quoted string argument from the command line
  */
-static void parse_single_quote(struct uci_context *ctx, char **str, char **target)
+static void parse_single_quote(struct uci_context *ctx, int *target)
 {
+	struct uci_parse_context *pctx = ctx->pctx;
 	char c;
 	/* skip quote character */
-	*str += 1;
+	pctx->pos += 1;
 
-	while ((c = **str)) {
+	while (1) {
+		c = pctx_cur_char(pctx);
 		switch(c) {
 		case '\'':
-			**target = 0;
-			*str += 1;
+			pctx->pos += 1;
 			return;
+		case 0:
+			/* Multi-line str value */
+			uci_getln(ctx, pctx->pos);
+			if (!pctx_cur_char(pctx)) {
+				uci_parse_error(ctx, "EOF with unterminated \"");
+			}
+			break;
 		default:
-			addc(target, str);
+			addc(ctx, target, &pctx->pos);
 		}
 	}
-	uci_parse_error(ctx, *str, "unterminated '");
+	uci_parse_error(ctx, "unterminated '");
 }
 
 /*
  * parse a string from the command line and detect the quoting style
  */
-static void parse_str(struct uci_context *ctx, char **str, char **target)
+static void parse_str(struct uci_context *ctx, int *target)
 {
+	struct uci_parse_context *pctx = ctx->pctx;
 	bool next = true;
 	do {
-		switch(**str) {
+		switch(pctx_cur_char(pctx)) {
 		case '\'':
-			parse_single_quote(ctx, str, target);
+			parse_single_quote(ctx, target);
 			break;
 		case '"':
-			parse_double_quote(ctx, str, target);
+			parse_double_quote(ctx, target);
 			break;
 		case '#':
-			**str = 0;
+			pctx_cur_char(pctx) = 0;
 			/* fall through */
 		case 0:
 			goto done;
@@ -194,14 +214,14 @@ static void parse_str(struct uci_context *ctx, char **str, char **target)
 			next = false;
 			goto done;
 		case '\\':
-			if (!parse_backslash(ctx, str))
+			if (!parse_backslash(ctx))
 				continue;
 			/* fall through */
 		default:
-			addc(target, str);
+			addc(ctx, target, &pctx->pos);
 			break;
 		}
-	} while (**str && !isspace(**str));
+	} while (pctx_cur_char(pctx) && !isspace(pctx_cur_char(pctx)));
 done:
 
 	/*
@@ -209,40 +229,40 @@ done:
 	 * character, skip to the next one, because the whitespace will
 	 * be overwritten by a null byte here
 	 */
-	if (**str && next)
-		*str += 1;
+	if (pctx_cur_char(pctx) && next)
+		pctx->pos += 1;
 
 	/* terminate the parsed string */
-	**target = 0;
+	pctx_char(pctx, *target) = 0;
 }
 
 /*
  * extract the next argument from the command line
  */
-static char *next_arg(struct uci_context *ctx, char **str, bool required, bool name)
+static char *next_arg(struct uci_context *ctx, bool required, bool name)
 {
-	char *val;
-	char *ptr;
+	struct uci_parse_context *pctx = ctx->pctx;
+	int val, ptr;
 
-	val = ptr = *str;
-	skip_whitespace(ctx, str);
-	if(*str[0] == ';') {
-		*str[0] = 0;
-		*str += 1;
+	skip_whitespace(ctx);
+	val = ptr = pctx_pos(pctx);
+	if(pctx_cur_char(pctx) == ';') {
+		pctx_cur_char(pctx) = 0;
+		pctx->pos += 1;
 	} else {
-		parse_str(ctx, str, &ptr);
+		parse_str(ctx, &ptr);
 	}
-	if (!*val) {
+	if (!pctx_char(pctx, val)) {
 		if (required)
-			uci_parse_error(ctx, *str, "insufficient arguments");
+			uci_parse_error(ctx, "insufficient arguments");
 		goto done;
 	}
 
-	if (name && !uci_validate_name(val))
-		uci_parse_error(ctx, val, "invalid character in field");
+	if (name && !uci_validate_name(pctx_str(pctx, val)))
+		uci_parse_error(ctx, "invalid character in name field");
 
 done:
-	return val;
+	return pctx_str(pctx, val);
 }
 
 int uci_parse_argument(struct uci_context *ctx, FILE *stream, char **str, char **result)
@@ -262,9 +282,11 @@ int uci_parse_argument(struct uci_context *ctx, FILE *stream, char **str, char *
 	if (!*str) {
 		uci_getln(ctx, 0);
 		*str = ctx->pctx->buf;
+	} else {
+		UCI_ASSERT(ctx, ctx->pctx->pos == *str - ctx->pctx->buf);
 	}
 
-	*result = next_arg(ctx, str, false, false);
+	*result = next_arg(ctx, false, false);
 
 	return 0;
 }
@@ -310,14 +332,14 @@ fill_package:
  * verify that the end of the line or command is reached.
  * throw an error if extra arguments are given on the command line
  */
-static void assert_eol(struct uci_context *ctx, char **str)
+static void assert_eol(struct uci_context *ctx)
 {
 	char *tmp;
 
-	skip_whitespace(ctx, str);
-	tmp = next_arg(ctx, str, false, false);
+	skip_whitespace(ctx);
+	tmp = next_arg(ctx, false, false);
 	if (*tmp && (ctx->flags & UCI_FLAG_STRICT))
-		uci_parse_error(ctx, *str, "too many arguments");
+		uci_parse_error(ctx, "too many arguments");
 }
 
 /*
@@ -358,15 +380,16 @@ static void uci_switch_config(struct uci_context *ctx)
 /*
  * parse the 'package' uci command (next config package)
  */
-static void uci_parse_package(struct uci_context *ctx, char **str, bool single)
+static void uci_parse_package(struct uci_context *ctx, bool single)
 {
+	struct uci_parse_context *pctx = ctx->pctx;
 	char *name = NULL;
 
 	/* command string null-terminated by strtok */
-	*str += strlen(*str) + 1;
+	pctx->pos += strlen(pctx_cur_str(pctx)) + 1;
 
-	name = next_arg(ctx, str, true, true);
-	assert_eol(ctx, str);
+	name = next_arg(ctx, true, true);
+	assert_eol(ctx);
 	if (single)
 		return;
 
@@ -377,7 +400,7 @@ static void uci_parse_package(struct uci_context *ctx, char **str, bool single)
 /*
  * parse the 'config' uci command (open a section)
  */
-static void uci_parse_config(struct uci_context *ctx, char **str)
+static void uci_parse_config(struct uci_context *ctx)
 {
 	struct uci_parse_context *pctx = ctx->pctx;
 	struct uci_element *e;
@@ -388,19 +411,19 @@ static void uci_parse_config(struct uci_context *ctx, char **str)
 	uci_fixup_section(ctx, ctx->pctx->section);
 	if (!ctx->pctx->package) {
 		if (!ctx->pctx->name)
-			uci_parse_error(ctx, *str, "attempting to import a file without a package name");
+			uci_parse_error(ctx, "attempting to import a file without a package name");
 
 		uci_switch_config(ctx);
 	}
 
 	/* command string null-terminated by strtok */
-	*str += strlen(*str) + 1;
+	pctx->pos += strlen(pctx_cur_str(pctx)) + 1;
 
-	type = next_arg(ctx, str, true, false);
+	type = next_arg(ctx, true, false);
 	if (!uci_validate_type(type))
-		uci_parse_error(ctx, type, "invalid character in field");
-	name = next_arg(ctx, str, false, true);
-	assert_eol(ctx, str);
+		uci_parse_error(ctx, "invalid character in type field");
+	name = next_arg(ctx, false, true);
+	assert_eol(ctx);
 
 	if (!name || !name[0]) {
 		ctx->internal = !pctx->merge;
@@ -422,7 +445,7 @@ static void uci_parse_config(struct uci_context *ctx, char **str)
 /*
  * parse the 'option' uci command (open a value)
  */
-static void uci_parse_option(struct uci_context *ctx, char **str, bool list)
+static void uci_parse_option(struct uci_context *ctx, bool list)
 {
 	struct uci_parse_context *pctx = ctx->pctx;
 	struct uci_element *e;
@@ -431,14 +454,14 @@ static void uci_parse_option(struct uci_context *ctx, char **str, bool list)
 	char *value = NULL;
 
 	if (!pctx->section)
-		uci_parse_error(ctx, *str, "option/list command found before the first section");
+		uci_parse_error(ctx, "option/list command found before the first section");
 
 	/* command string null-terminated by strtok */
-	*str += strlen(*str) + 1;
+	pctx->pos += strlen(pctx_cur_str(pctx)) + 1;
 
-	name = next_arg(ctx, str, true, true);
-	value = next_arg(ctx, str, false, false);
-	assert_eol(ctx, str);
+	name = next_arg(ctx, true, true);
+	value = next_arg(ctx, false, false);
+	assert_eol(ctx);
 
 	uci_fill_ptr(ctx, &ptr, &pctx->section->e);
 	e = uci_lookup_list(&pctx->section->options, name);
@@ -460,12 +483,12 @@ static void uci_parse_option(struct uci_context *ctx, char **str, bool list)
 static void uci_parse_line(struct uci_context *ctx, bool single)
 {
 	struct uci_parse_context *pctx = ctx->pctx;
-	char *word, *brk;
+	char *word;
 
-	word = pctx->buf;
+	/* Skip whitespace characters at the start of line */
+	skip_whitespace(ctx);
 	do {
-		brk = NULL;
-		word = strtok_r(word, " \t", &brk);
+		word = strtok(pctx_cur_str(pctx), " \t");
 		if (!word)
 			return;
 
@@ -475,25 +498,25 @@ static void uci_parse_line(struct uci_context *ctx, bool single)
 				return;
 			case 'p':
 				if ((word[1] == 0) || !strcmp(word + 1, "ackage"))
-					uci_parse_package(ctx, &word, single);
+					uci_parse_package(ctx, single);
 				else
 					goto invalid;
 				break;
 			case 'c':
 				if ((word[1] == 0) || !strcmp(word + 1, "onfig"))
-					uci_parse_config(ctx, &word);
+					uci_parse_config(ctx);
 				else
 					goto invalid;
 				break;
 			case 'o':
 				if ((word[1] == 0) || !strcmp(word + 1, "ption"))
-					uci_parse_option(ctx, &word, false);
+					uci_parse_option(ctx, false);
 				else
 					goto invalid;
 				break;
 			case 'l':
 				if ((word[1] == 0) || !strcmp(word + 1, "ist"))
-					uci_parse_option(ctx, &word, true);
+					uci_parse_option(ctx, true);
 				else
 					goto invalid;
 				break;
@@ -502,7 +525,7 @@ static void uci_parse_line(struct uci_context *ctx, bool single)
 		}
 		continue;
 invalid:
-		uci_parse_error(ctx, word, "invalid command");
+		uci_parse_error(ctx, "invalid command");
 	} while (1);
 }
 
@@ -639,6 +662,7 @@ int uci_import(struct uci_context *ctx, FILE *stream, const char *name, struct u
 	}
 
 	while (!feof(pctx->file)) {
+		pctx->pos = 0;
 		uci_getln(ctx, 0);
 		UCI_TRAP_SAVE(ctx, error);
 		if (pctx->buf[0])
