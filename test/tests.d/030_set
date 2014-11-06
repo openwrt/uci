@@ -22,9 +22,25 @@ test_set_nonexisting_option()
 	assertSameFile ${REF_DIR}/set_nonexisting_option.result ${CHANGES_DIR}/set
 }
 
+test_set_nonexisting_option_multiline()
+{
+	cp ${REF_DIR}/set_nonexisting_option.data ${CONFIG_DIR}/set
+	${UCI} set set.section.opt="Hello,\'
+World\""
+	assertSameFile ${REF_DIR}/set_nonexisting_option_multiline.result ${CHANGES_DIR}/set
+}
+
 test_set_existing_option()
 {
 	cp ${REF_DIR}/set_existing_option.data ${CONFIG_DIR}/set
 	${UCI} set set.section.opt=val
 	assertSameFile ${REF_DIR}/set_existing_option.result ${CHANGES_DIR}/set
+}
+
+test_set_existing_option_multiline()
+{
+	cp ${REF_DIR}/set_existing_option.data ${CONFIG_DIR}/set
+	${UCI} set set.section.opt="Hello,\'
+World\""
+	assertSameFile ${REF_DIR}/set_existing_option_multiline.result ${CHANGES_DIR}/set
 }

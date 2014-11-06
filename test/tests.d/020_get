@@ -31,6 +31,15 @@ test_get_option()
 	assertEquals 'val' "$value"
 }
 
+test_get_option_multiline()
+{
+	cp ${REF_DIR}/get_multiline.data ${CONFIG_DIR}/test
+	value="$($UCI get test.section.opt)"
+	echo "$value"
+	assertEquals '"Hello, World.
+'\''' "$value"
+}
+
 test_get_section()
 {
 	cp ${REF_DIR}/get.data ${CONFIG_DIR}/test
