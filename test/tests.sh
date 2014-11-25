@@ -6,13 +6,13 @@ CHANGES_DIR="/tmp/.uci"
 TMP_DIR=${TESTS_DIR}"/tmp"
 FULL_SUITE=${TESTS_DIR}"/full_suite.sh"
 
-UCI_STATIC="../uci-static"
-[ -x $UCI_STATIC ] || {
+UCI_BIN="../uci"
+[ -x $UCI_BIN ] || {
 	echo "uci-static is not present."
 	return 1
 }
-UCI="${UCI_STATIC} -c ${CONFIG_DIR} -p ${CHANGES_DIR}"
-UCI_Q="${UCI_STATIC} -c ${CONFIG_DIR} -p ${CHANGES_DIR} -q"
+UCI="${UCI_BIN} -c ${CONFIG_DIR} -p ${CHANGES_DIR}"
+UCI_Q="${UCI_BIN} -c ${CONFIG_DIR} -p ${CHANGES_DIR} -q"
 
 REF_DIR="./references"
 SCRIPTS_DIR="./tests.d"
