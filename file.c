@@ -90,11 +90,11 @@ static bool parse_backslash(struct uci_context *ctx)
 	pctx->pos += 1;
 
 	/* undecoded backslash at the end of line, fetch the next line */
-	if (!pctx_cur_char(pctx)
-		    || pctx_cur_char(pctx) == '\n'
-		    || (pctx_cur_char(pctx) == '\r' &&
-			pctx_char(pctx, pctx_pos(pctx) + 1) == '\n' &&
-			!pctx_char(pctx, pctx_pos(pctx) + 2))) {
+	if (!pctx_cur_char(pctx) ||
+	    pctx_cur_char(pctx) == '\n' ||
+	    (pctx_cur_char(pctx) == '\r' &&
+	     pctx_char(pctx, pctx_pos(pctx) + 1) == '\n' &&
+	     !pctx_char(pctx, pctx_pos(pctx) + 2))) {
 		uci_getln(ctx, pctx->pos);
 		return false;
 	}
@@ -179,9 +179,9 @@ static void parse_single_quote(struct uci_context *ctx, int *target)
 		case 0:
 			/* Multi-line str value */
 			uci_getln(ctx, pctx->pos);
-			if (!pctx_cur_char(pctx)) {
+			if (!pctx_cur_char(pctx))
 				uci_parse_error(ctx, "EOF with unterminated \"");
-			}
+
 			break;
 		default:
 			addc(ctx, target, &pctx->pos);
