@@ -95,34 +95,29 @@ int uci_add_delta_path(struct uci_context *ctx, const char *dir)
 	return 0;
 }
 
+char const uci_command_char[] = {
+	[UCI_CMD_ADD] = '+',
+	[UCI_CMD_REMOVE] = '-',
+	[UCI_CMD_CHANGE] = 0,
+	[UCI_CMD_RENAME] = '@',
+	[UCI_CMD_REORDER] = '^',
+	[UCI_CMD_LIST_ADD] = '|',
+	[UCI_CMD_LIST_DEL] = '~'
+};
+
 static inline int uci_parse_delta_tuple(struct uci_context *ctx, struct uci_ptr *ptr)
 {
 	struct uci_parse_context *pctx = ctx->pctx;
 	char *str = pctx_cur_str(pctx), *arg;
-	int c = UCI_CMD_CHANGE;
+	int c;
 
 	UCI_INTERNAL(uci_parse_argument, ctx, ctx->pctx->file, &str, &arg);
-	switch(*arg) {
-	case '^':
-		c = UCI_CMD_REORDER;
-		break;
-	case '-':
-		c = UCI_CMD_REMOVE;
-		break;
-	case '@':
-		c = UCI_CMD_RENAME;
-		break;
-	case '+':
-		/* UCI_CMD_ADD is used for anonymous sections or list values */
-		c = UCI_CMD_ADD;
-		break;
-	case '|':
-		c = UCI_CMD_LIST_ADD;
-		break;
-	case '~':
-		c = UCI_CMD_LIST_DEL;
-		break;
+	for (c = 0; c <= __UCI_CMD_LAST; c++) {
+		if (uci_command_char[c] == *arg)
+			break;
 	}
+	if (c > __UCI_CMD_LAST)
+		c = UCI_CMD_CHANGE;
 
 	if (c != UCI_CMD_CHANGE)
 		arg += 1;
@@ -445,30 +440,9 @@ int uci_save(struct uci_context *ctx, struct uci_package *p)
 
 	uci_foreach_element_safe(&p->delta, tmp, e) {
 		struct uci_delta *h = uci_to_delta(e);
-		char *prefix = "";
-
-		switch(h->cmd) {
-		case UCI_CMD_REMOVE:
-			prefix = "-";
-			break;
-		case UCI_CMD_RENAME:
-			prefix = "@";
-			break;
-		case UCI_CMD_ADD:
-			prefix = "+";
-			break;
-		case UCI_CMD_REORDER:
-			prefix = "^";
-			break;
-		case UCI_CMD_LIST_ADD:
-			prefix = "|";
-			break;
-		case UCI_CMD_LIST_DEL:
-			prefix = "~";
-			break;
-		default:
-			break;
-		}
+		char prefix[2] = {0, 0};
+		if (h->cmd <= __UCI_CMD_LAST)
+			prefix[0] = uci_command_char[h->cmd];
 
 		fprintf(f, "%s%s.%s", prefix, p->e.name, h->section);
 		if (e->name)

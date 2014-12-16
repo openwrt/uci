@@ -450,6 +450,9 @@ struct uci_option
 	} v;
 };
 
+/*
+ * UCI_CMD_ADD is used for anonymous sections or list values
+ */
 enum uci_command {
 	UCI_CMD_ADD,
 	UCI_CMD_REMOVE,
@@ -458,7 +461,10 @@ enum uci_command {
 	UCI_CMD_REORDER,
 	UCI_CMD_LIST_ADD,
 	UCI_CMD_LIST_DEL,
+	__UCI_CMD_MAX,
+	__UCI_CMD_LAST = __UCI_CMD_MAX - 1
 };
+extern char const uci_command_char[];
 
 struct uci_delta
 {
