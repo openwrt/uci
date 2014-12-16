@@ -157,7 +157,6 @@ static void parse_double_quote(struct uci_context *ctx, int *target)
 			break;
 		}
 	}
-	uci_parse_error(ctx, "unterminated \"");
 }
 
 /*
@@ -180,14 +179,13 @@ static void parse_single_quote(struct uci_context *ctx, int *target)
 			/* Multi-line str value */
 			uci_getln(ctx, pctx->pos);
 			if (!pctx_cur_char(pctx))
-				uci_parse_error(ctx, "EOF with unterminated \"");
+				uci_parse_error(ctx, "EOF with unterminated '");
 
 			break;
 		default:
 			addc(ctx, target, &pctx->pos);
 		}
 	}
-	uci_parse_error(ctx, "unterminated '");
 }
 
 /*
