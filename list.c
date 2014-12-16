@@ -346,7 +346,7 @@ uci_lookup_ext_section(struct uci_context *ctx, struct uci_ptr *ptr)
 	goto done;
 
 error:
-	e = NULL;
+	free(section);
 	memset(ptr, 0, sizeof(struct uci_ptr));
 	UCI_THROW(ctx, UCI_ERR_INVAL);
 done:

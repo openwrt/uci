@@ -360,6 +360,7 @@ static int uci_do_package_cmd(int cmd, int argc, char **argv)
 {
 	char **configs = NULL;
 	char **p;
+	int ret = 1;
 
 	if (argc > 2)
 		return 255;
@@ -369,14 +370,17 @@ static int uci_do_package_cmd(int cmd, int argc, char **argv)
 
 	if ((uci_list_configs(ctx, &configs) != UCI_OK) || !configs) {
 		cli_perror();
-		return 1;
+		goto out;
 	}
 
 	for (p = configs; *p; p++) {
 		package_cmd(cmd, *p);
 	}
 
-	return 0;
+	ret = 0;
+out:
+	free(configs);
+	return ret;
 }
 
 static int uci_do_add(int argc, char **argv)
