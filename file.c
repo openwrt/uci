@@ -239,7 +239,7 @@ done:
 /*
  * extract the next argument from the command line
  */
-static char *next_arg(struct uci_context *ctx, bool required, bool name)
+static int next_arg(struct uci_context *ctx, bool required, bool name)
 {
 	struct uci_parse_context *pctx = ctx->pctx;
 	int val, ptr;
@@ -262,11 +262,13 @@ static char *next_arg(struct uci_context *ctx, bool required, bool name)
 		uci_parse_error(ctx, "invalid character in name field");
 
 done:
-	return pctx_str(pctx, val);
+	return val;
 }
 
 int uci_parse_argument(struct uci_context *ctx, FILE *stream, char **str, char **result)
 {
+	int ofs_result;
+
 	UCI_HANDLE_ERR(ctx);
 	UCI_ASSERT(ctx, str != NULL);
 	UCI_ASSERT(ctx, result != NULL);
@@ -286,7 +288,10 @@ int uci_parse_argument(struct uci_context *ctx, FILE *stream, char **str, char *
 		UCI_ASSERT(ctx, ctx->pctx->pos == *str - ctx->pctx->buf);
 	}
 
-	*result = next_arg(ctx, false, false);
+	/*FIXME do we need to skip empty lines? */
+	ofs_result = next_arg(ctx, false, false);
+	*result = pctx_str(ctx->pctx, ofs_result);
+	*str = pctx_cur_str(ctx->pctx);
 
 	return 0;
 }
@@ -335,9 +340,11 @@ fill_package:
 static void assert_eol(struct uci_context *ctx)
 {
 	char *tmp;
+	int ofs_tmp;
 
 	skip_whitespace(ctx);
-	tmp = next_arg(ctx, false, false);
+	ofs_tmp = next_arg(ctx, false, false);
+	tmp = pctx_str(ctx->pctx, ofs_tmp);
 	if (*tmp && (ctx->flags & UCI_FLAG_STRICT))
 		uci_parse_error(ctx, "too many arguments");
 }
@@ -383,12 +390,14 @@ static void uci_switch_config(struct uci_context *ctx)
 static void uci_parse_package(struct uci_context *ctx, bool single)
 {
 	struct uci_parse_context *pctx = ctx->pctx;
-	char *name = NULL;
+	int ofs_name;
+	char *name;
 
 	/* command string null-terminated by strtok */
 	pctx->pos += strlen(pctx_cur_str(pctx)) + 1;
 
-	name = next_arg(ctx, true, true);
+	ofs_name = next_arg(ctx, true, true);
+	name = pctx_str(pctx, ofs_name);
 	assert_eol(ctx);
 	if (single)
 		return;
@@ -405,8 +414,9 @@ static void uci_parse_config(struct uci_context *ctx)
 	struct uci_parse_context *pctx = ctx->pctx;
 	struct uci_element *e;
 	struct uci_ptr ptr;
-	char *name = NULL;
-	char *type = NULL;
+	int ofs_name, ofs_type;
+	char *name;
+	char *type;
 
 	uci_fixup_section(ctx, ctx->pctx->section);
 	if (!ctx->pctx->package) {
@@ -419,10 +429,14 @@ static void uci_parse_config(struct uci_context *ctx)
 	/* command string null-terminated by strtok */
 	pctx->pos += strlen(pctx_cur_str(pctx)) + 1;
 
-	type = next_arg(ctx, true, false);
+	ofs_type = next_arg(ctx, true, false);
+	type = pctx_str(pctx, ofs_type);
 	if (!uci_validate_type(type))
 		uci_parse_error(ctx, "invalid character in type field");
-	name = next_arg(ctx, false, true);
+
+	ofs_name = next_arg(ctx, false, true);
+	type = pctx_str(pctx, ofs_type);
+	name = pctx_str(pctx, ofs_name);
 	assert_eol(ctx);
 
 	if (!name || !name[0]) {
@@ -450,6 +464,7 @@ static void uci_parse_option(struct uci_context *ctx, bool list)
 	struct uci_parse_context *pctx = ctx->pctx;
 	struct uci_element *e;
 	struct uci_ptr ptr;
+	int ofs_name, ofs_value;
 	char *name = NULL;
 	char *value = NULL;
 
@@ -459,8 +474,10 @@ static void uci_parse_option(struct uci_context *ctx, bool list)
 	/* command string null-terminated by strtok */
 	pctx->pos += strlen(pctx_cur_str(pctx)) + 1;
 
-	name = next_arg(ctx, true, true);
-	value = next_arg(ctx, false, false);
+	ofs_name = next_arg(ctx, true, true);
+	ofs_value = next_arg(ctx, false, false);
+	name = pctx_str(pctx, ofs_name);
+	value = pctx_str(pctx, ofs_value);
 	assert_eol(ctx);
 
 	uci_fill_ptr(ctx, &ptr, &pctx->section->e);
