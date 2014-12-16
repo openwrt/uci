@@ -95,11 +95,14 @@ int uci_add_delta_path(struct uci_context *ctx, const char *dir)
 	return 0;
 }
 
-static inline int uci_parse_delta_tuple(struct uci_context *ctx, char **buf, struct uci_ptr *ptr)
+static inline int uci_parse_delta_tuple(struct uci_context *ctx, struct uci_ptr *ptr)
 {
+	struct uci_parse_context *pctx = ctx->pctx;
+	char *str = pctx_cur_str(pctx), *arg;
 	int c = UCI_CMD_CHANGE;
 
-	switch(**buf) {
+	UCI_INTERNAL(uci_parse_argument, ctx, ctx->pctx->file, &str, &arg);
+	switch(*arg) {
 	case '^':
 		c = UCI_CMD_REORDER;
 		break;
@@ -122,9 +125,9 @@ static inline int uci_parse_delta_tuple(struct uci_context *ctx, char **buf, str
 	}
 
 	if (c != UCI_CMD_CHANGE)
-		*buf += 1;
+		arg += 1;
 
-	UCI_INTERNAL(uci_parse_ptr, ctx, ptr, *buf);
+	UCI_INTERNAL(uci_parse_ptr, ctx, ptr, arg);
 
 	if (!ptr->section)
 		goto error;
@@ -155,13 +158,13 @@ error:
 	return 0;
 }
 
-static void uci_parse_delta_line(struct uci_context *ctx, struct uci_package *p, char *buf)
+static void uci_parse_delta_line(struct uci_context *ctx, struct uci_package *p)
 {
 	struct uci_element *e = NULL;
 	struct uci_ptr ptr;
 	int cmd;
 
-	cmd = uci_parse_delta_tuple(ctx, &buf, &ptr);
+	cmd = uci_parse_delta_tuple(ctx, &ptr);
 	if (strcmp(ptr.package, p->e.name) != 0)
 		goto error;
 
@@ -214,6 +217,7 @@ static int uci_parse_delta(struct uci_context *ctx, FILE *stream, struct uci_pac
 	pctx->file = stream;
 
 	while (!feof(pctx->file)) {
+		pctx->pos = 0;
 		uci_getln(ctx, 0);
 		if (!pctx->buf[0])
 			continue;
@@ -223,7 +227,7 @@ static int uci_parse_delta(struct uci_context *ctx, FILE *stream, struct uci_pac
 		 * delta as possible
 		 */
 		UCI_TRAP_SAVE(ctx, error);
-		uci_parse_delta_line(ctx, p, pctx->buf);
+		uci_parse_delta_line(ctx, p);
 		UCI_TRAP_RESTORE(ctx);
 		changes++;
 error:
@@ -311,11 +315,10 @@ static void uci_filter_delta(struct uci_context *ctx, const char *name, const ch
 	pctx->file = f;
 	while (!feof(f)) {
 		struct uci_element *e;
-		char *buf;
 
+		pctx->pos = 0;
 		uci_getln(ctx, 0);
-		buf = pctx->buf;
-		if (!buf[0])
+		if (!pctx->buf[0])
 			continue;
 
 		/* NB: need to allocate the element before the call to
@@ -324,7 +327,7 @@ static void uci_filter_delta(struct uci_context *ctx, const char *name, const ch
 		e = uci_alloc_generic(ctx, UCI_TYPE_DELTA, pctx->buf, sizeof(struct uci_element));
 		uci_list_add(&list, &e->list);
 
-		uci_parse_delta_tuple(ctx, &buf, &ptr);
+		uci_parse_delta_tuple(ctx, &ptr);
 		if (section) {
 			if (!ptr.section || (strcmp(section, ptr.section) != 0))
 				continue;
