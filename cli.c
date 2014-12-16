@@ -168,18 +168,41 @@ static void cli_perror(void)
 	uci_perror(ctx, appname);
 }
 
-static void uci_show_value(struct uci_option *o)
+static void uci_print_value(FILE *f, const char *v)
+{
+	fprintf(f, "'");
+	while (*v) {
+		if (*v != '\'')
+			fputc(*v, f);
+		else
+			fprintf(f, "'\\''");
+		v++;
+	}
+	fprintf(f, "'");
+}
+
+static void uci_show_value(struct uci_option *o, bool quote)
 {
 	struct uci_element *e;
 	bool sep = false;
+	char *space;
 
 	switch(o->type) {
 	case UCI_TYPE_STRING:
-		printf("%s\n", o->v.string);
+		if (quote)
+			uci_print_value(stdout, o->v.string);
+		else
+			printf("%s", o->v.string);
+		printf("\n");
 		break;
 	case UCI_TYPE_LIST:
 		uci_foreach_element(&o->v.list, e) {
-			printf("%s%s", (sep ? delimiter : ""), e->name);
+			printf("%s", (sep ? delimiter : ""));
+			space = strpbrk(e->name, " \t\r\n");
+			if (!space && !quote)
+				printf("%s", e->name);
+			else
+				uci_print_value(stdout, e->name);
 			sep = true;
 		}
 		printf("\n");
@@ -190,13 +213,13 @@ static void uci_show_value(struct uci_option *o)
 	}
 }
 
-static void uci_show_option(struct uci_option *o)
+static void uci_show_option(struct uci_option *o, bool quote)
 {
 	printf("%s.%s.%s=",
 		o->section->package->e.name,
 		(cur_section_ref ? cur_section_ref : o->section->e.name),
 		o->e.name);
-	uci_show_value(o);
+	uci_show_value(o, quote);
 }
 
 static void uci_show_section(struct uci_section *s)
@@ -209,7 +232,7 @@ static void uci_show_section(struct uci_section *s)
 	sname = (cur_section_ref ? cur_section_ref : s->e.name);
 	printf("%s.%s=%s\n", cname, sname, s->type);
 	uci_foreach_element(&s->options, e) {
-		uci_show_option(uci_to_option(e));
+		uci_show_option(uci_to_option(e), true);
 	}
 }
 
@@ -251,8 +274,10 @@ static void uci_show_changes(struct uci_package *p)
 		printf("%s%s.%s", prefix, p->e.name, h->section);
 		if (e->name)
 			printf(".%s", e->name);
-		if (h->cmd != UCI_CMD_REMOVE)
-			printf("%s%s", op, h->value);
+		if (h->cmd != UCI_CMD_REMOVE) {
+			printf("%s", op);
+			uci_print_value(stdout, h->value);
+		}
 		printf("\n");
 	}
 }
@@ -298,7 +323,7 @@ static int package_cmd(int cmd, char *tuple)
 				uci_show_section(ptr.s);
 				break;
 			case UCI_TYPE_OPTION:
-				uci_show_option(ptr.o);
+				uci_show_option(ptr.o, true);
 				break;
 			default:
 				/* should not happen */
@@ -444,7 +469,7 @@ static int uci_do_section_cmd(int cmd, int argc, char **argv)
 			printf("%s\n", ptr.s->type);
 			break;
 		case UCI_TYPE_OPTION:
-			uci_show_value(ptr.o);
+			uci_show_value(ptr.o, false);
 			break;
 		default:
 			break;
