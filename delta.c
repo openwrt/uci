@@ -66,6 +66,35 @@ uci_free_delta(struct uci_delta *h)
 	uci_free_element(&h->e);
 }
 
+static void uci_delta_save(struct uci_context *ctx, FILE *f,
+			const char *name, const struct uci_delta *h)
+{
+	const struct uci_element *e = &h->e;
+	char prefix[2] = {0, 0};
+
+	if (h->cmd <= __UCI_CMD_LAST)
+		prefix[0] = uci_command_char[h->cmd];
+
+	fprintf(f, "%s%s.%s", prefix, name, h->section);
+	if (e->name)
+		fprintf(f, ".%s", e->name);
+
+	if (h->cmd == UCI_CMD_REMOVE && !h->value)
+		fprintf(f, "\n");
+	else {
+		int i;
+
+		fprintf(f, "='");
+		for (i = 0; h->value[i]; i++) {
+			unsigned char c = h->value[i];
+			if (c != '\'')
+				fputc(c, f);
+			else
+				fprintf(f, "'\\''");
+		}
+		fprintf(f, "'\n");
+	}
+}
 
 int uci_set_savedir(struct uci_context *ctx, const char *dir)
 {
@@ -309,30 +338,29 @@ static void uci_filter_delta(struct uci_context *ctx, const char *name, const ch
 	f = uci_open_stream(ctx, filename, NULL, SEEK_SET, true, false);
 	pctx->file = f;
 	while (!feof(f)) {
-		struct uci_element *e;
+		enum uci_command c;
+		bool match;
 
 		pctx->pos = 0;
 		uci_getln(ctx, 0);
 		if (!pctx->buf[0])
 			continue;
 
-		/* NB: need to allocate the element before the call to
-		 * uci_parse_delta_tuple, otherwise the original string
-		 * gets modified before it is saved */
-		e = uci_alloc_generic(ctx, UCI_TYPE_DELTA, pctx->buf, sizeof(struct uci_element));
-		uci_list_add(&list, &e->list);
-
-		uci_parse_delta_tuple(ctx, &ptr);
+		c = uci_parse_delta_tuple(ctx, &ptr);
+		match = true;
 		if (section) {
 			if (!ptr.section || (strcmp(section, ptr.section) != 0))
-				continue;
+				match = false;
 		}
-		if (option) {
+		if (match && option) {
 			if (!ptr.option || (strcmp(option, ptr.option) != 0))
-				continue;
+				match = false;
 		}
-		/* match, drop this element again */
-		uci_free_element(e);
+
+		if (!match) {
+			uci_add_delta(ctx, &list, c,
+				ptr.section, ptr.option, ptr.value);
+		}
 	}
 
 	/* rebuild the delta file */
@@ -340,8 +368,9 @@ static void uci_filter_delta(struct uci_context *ctx, const char *name, const ch
 	if (ftruncate(fileno(f), 0) < 0)
 		UCI_THROW(ctx, UCI_ERR_IO);
 	uci_foreach_element_safe(&list, tmp, e) {
-		fprintf(f, "%s\n", e->name);
-		uci_free_element(e);
+		struct uci_delta *h = uci_to_delta(e);
+		uci_delta_save(ctx, f, name, h);
+		uci_free_delta(h);
 	}
 	UCI_TRAP_RESTORE(ctx);
 
@@ -349,7 +378,7 @@ done:
 	free(filename);
 	uci_close_stream(pctx->file);
 	uci_foreach_element_safe(&list, tmp, e) {
-		uci_free_element(e);
+		uci_free_delta(uci_to_delta(e));
 	}
 	uci_cleanup(ctx);
 }
@@ -440,29 +469,7 @@ int uci_save(struct uci_context *ctx, struct uci_package *p)
 
 	uci_foreach_element_safe(&p->delta, tmp, e) {
 		struct uci_delta *h = uci_to_delta(e);
-		char prefix[2] = {0, 0};
-		if (h->cmd <= __UCI_CMD_LAST)
-			prefix[0] = uci_command_char[h->cmd];
-
-		fprintf(f, "%s%s.%s", prefix, p->e.name, h->section);
-		if (e->name)
-			fprintf(f, ".%s", e->name);
-
-		if (h->cmd == UCI_CMD_REMOVE && !h->value)
-			fprintf(f, "\n");
-		else {
-			int i;
-
-			fprintf(f, "='");
-			for (i = 0; h->value[i]; i++) {
-				unsigned char c = h->value[i];
-				if (c != '\'')
-					fputc(c, f);
-				else
-					fprintf(f, "'\\''");
-			}
-			fprintf(f, "'\n");
-		}
+		uci_delta_save(ctx, f, p->e.name, h);
 		uci_free_delta(h);
 	}
 
