@@ -246,7 +246,7 @@ static char *next_arg(struct uci_context *ctx, bool required, bool name)
 
 	skip_whitespace(ctx);
 	val = ptr = pctx_pos(pctx);
-	if(pctx_cur_char(pctx) == ';') {
+	if (pctx_cur_char(pctx) == ';') {
 		pctx_cur_char(pctx) = 0;
 		pctx->pos += 1;
 	} else {

@@ -9,7 +9,5 @@ CMakeFiles
 install_manifest.txt
 
 uci
-uci-static
-ucimap-example
 uci_config.h
 test/save
