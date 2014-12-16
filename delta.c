@@ -87,6 +87,8 @@ int uci_add_delta_path(struct uci_context *ctx, const char *dir)
 
 	UCI_HANDLE_ERR(ctx);
 	UCI_ASSERT(ctx, dir != NULL);
+	if (!strcmp(dir, ctx->savedir))
+		return -1;
 	e = uci_alloc_generic(ctx, UCI_TYPE_PATH, dir, sizeof(struct uci_element));
 	uci_list_add(&ctx->delta_path, &e->list);
 

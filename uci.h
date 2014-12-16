@@ -262,6 +262,8 @@ extern int uci_set_confdir(struct uci_context *ctx, const char *dir);
  *
  * This function allows you to add directories, which contain 'overlays'
  * for the active config, that will never be committed.
+ * Caller of this API should ensure that no duplicate entries (including the
+ * default search path, e.g. `UCI_SAVEDIR') should be added.
  */
 extern int uci_add_delta_path(struct uci_context *ctx, const char *dir);
 
