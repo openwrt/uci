@@ -48,8 +48,8 @@ __private void uci_getln(struct uci_context *ctx, int offset)
 		pctx->buf = uci_malloc(ctx, LINEBUF);
 		pctx->bufsz = LINEBUF;
 	}
-	/* `offset' may off by one */
-	if (offset >= pctx->bufsz) {
+	/* It takes 2 slots for fgets to read 1 char. */
+	if (offset >= pctx->bufsz - 1) {
 		pctx->bufsz *= 2;
 		pctx->buf = uci_realloc(ctx, pctx->buf, pctx->bufsz);
 	}
