@@ -34,6 +34,28 @@
 #define DPRINTF(...) do {} while (0)
 #endif
 
+#if !defined LUA_VERSION_NUM || LUA_VERSION_NUM==501
+
+/*
+ * ** Adapted from Lua 5.2.0
+ * */
+static void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup) {
+	luaL_checkstack(L, nup+1, "too many upvalues");
+	for (; l->name != NULL; l++) {  /* fill the table with given functions */
+		int i;
+		lua_pushstring(L, l->name);
+		for (i = 0; i < nup; i++)  /* copy upvalues to the top */
+			lua_pushvalue(L, -(nup+1));
+		lua_pushcclosure(L, l->func, nup);  /* closure with those upvalues */
+		lua_settable(L, -(nup + 3));
+	}
+	lua_pop(L, nup);  /* remove upvalues */
+}
+
+#define lua_rawlen(L, i) lua_objlen(L, i)
+
+#endif
+
 static struct uci_context *global_ctx = NULL;
 
 static struct uci_context *
@@ -566,7 +588,7 @@ uci_lua_set(lua_State *L)
 	case 4:
 		/* Format: uci.set("p", "s", "o", "v") */
 		if (lua_istable(L, nargs)) {
-			if (lua_objlen(L, nargs) < 1)
+			if (lua_rawlen(L, nargs) < 1)
 				return luaL_error(L, "Cannot set an uci option to an empty table value");
 			lua_rawgeti(L, nargs, 1);
 			ptr.value = luaL_checkstring(L, -1);
@@ -596,7 +618,7 @@ uci_lua_set(lua_State *L)
 	}
 
 	if (istable) {
-		if (lua_objlen(L, nargs) == 1) {
+		if (lua_rawlen(L, nargs) == 1) {
 			i = 1;
 			if (ptr.o) {
 				v = ptr.value;
@@ -613,7 +635,7 @@ uci_lua_set(lua_State *L)
 				goto error;
 		}
 
-		for (; i <= lua_objlen(L, nargs); i++) {
+		for (; i <= lua_rawlen(L, nargs); i++) {
 			lua_rawgeti(L, nargs, i);
 			ptr.value = luaL_checkstring(L, -1);
 			err = uci_add_list(ctx, &ptr);
@@ -753,7 +775,7 @@ uci_lua_add_change(lua_State *L, struct uci_element *e)
 			 * list_add, append this value to table */
 			} else {
 				lua_pushstring(L, value);
-				lua_rawseti(L, -2, lua_objlen(L, -2) + 1);
+				lua_rawseti(L, -2, lua_rawlen(L, -2) + 1);
 			}
 
 		/* non-list change, simply set/replace field */
@@ -967,11 +989,13 @@ luaopen_uci(lua_State *L)
 	lua_setfield(L, -2, "__index");
 
 	/* fill metatable */
-	luaL_register(L, NULL, uci);
+	luaL_setfuncs(L, uci, 0);
 	lua_pop(L, 1);
 
 	/* create module */
-	luaL_register(L, MODNAME, uci);
+	lua_newtable(L);
+	luaL_setfuncs(L, uci, 0);
+	lua_setglobal(L, MODNAME);
 
 	return 0;
 }
