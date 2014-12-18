@@ -237,7 +237,7 @@ done:
 /*
  * extract the next argument from the command line
  */
-static int next_arg(struct uci_context *ctx, bool required, bool name)
+static int next_arg(struct uci_context *ctx, bool required, bool name, bool package)
 {
 	struct uci_parse_context *pctx = ctx->pctx;
 	int val, ptr;
@@ -256,7 +256,7 @@ static int next_arg(struct uci_context *ctx, bool required, bool name)
 		goto done;
 	}
 
-	if (name && !uci_validate_name(pctx_str(pctx, val)))
+	if (name && !uci_validate_str(pctx_str(pctx, val), name, package))
 		uci_parse_error(ctx, "invalid character in name field");
 
 done:
@@ -282,7 +282,7 @@ int uci_parse_argument(struct uci_context *ctx, FILE *stream, char **str, char *
 		uci_getln(ctx, 0);
 
 	/*FIXME do we need to skip empty lines? */
-	ofs_result = next_arg(ctx, false, false);
+	ofs_result = next_arg(ctx, false, false, false);
 	*result = pctx_str(ctx->pctx, ofs_result);
 	*str = pctx_cur_str(ctx->pctx);
 
@@ -336,7 +336,7 @@ static void assert_eol(struct uci_context *ctx)
 	int ofs_tmp;
 
 	skip_whitespace(ctx);
-	ofs_tmp = next_arg(ctx, false, false);
+	ofs_tmp = next_arg(ctx, false, false, false);
 	tmp = pctx_str(ctx->pctx, ofs_tmp);
 	if (*tmp && (ctx->flags & UCI_FLAG_STRICT))
 		uci_parse_error(ctx, "too many arguments");
@@ -389,7 +389,7 @@ static void uci_parse_package(struct uci_context *ctx, bool single)
 	/* command string null-terminated by strtok */
 	pctx->pos += strlen(pctx_cur_str(pctx)) + 1;
 
-	ofs_name = next_arg(ctx, true, true);
+	ofs_name = next_arg(ctx, true, true, true);
 	name = pctx_str(pctx, ofs_name);
 	assert_eol(ctx);
 	if (single)
@@ -422,12 +422,12 @@ static void uci_parse_config(struct uci_context *ctx)
 	/* command string null-terminated by strtok */
 	pctx->pos += strlen(pctx_cur_str(pctx)) + 1;
 
-	ofs_type = next_arg(ctx, true, false);
+	ofs_type = next_arg(ctx, true, false, false);
 	type = pctx_str(pctx, ofs_type);
 	if (!uci_validate_type(type))
 		uci_parse_error(ctx, "invalid character in type field");
 
-	ofs_name = next_arg(ctx, false, true);
+	ofs_name = next_arg(ctx, false, true, false);
 	type = pctx_str(pctx, ofs_type);
 	name = pctx_str(pctx, ofs_name);
 	assert_eol(ctx);
@@ -467,8 +467,8 @@ static void uci_parse_option(struct uci_context *ctx, bool list)
 	/* command string null-terminated by strtok */
 	pctx->pos += strlen(pctx_cur_str(pctx)) + 1;
 
-	ofs_name = next_arg(ctx, true, true);
-	ofs_value = next_arg(ctx, false, false);
+	ofs_name = next_arg(ctx, true, true, false);
+	ofs_value = next_arg(ctx, false, false, false);
 	name = pctx_str(pctx, ofs_name);
 	value = pctx_str(pctx, ofs_value);
 	assert_eol(ctx);

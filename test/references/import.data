@@ -1,4 +1,4 @@
-package 'import'
+package 'import-test'
 
 config 'type' 'section'
 	option 'opt' 'val'

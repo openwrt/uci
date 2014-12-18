@@ -47,7 +47,7 @@ extern const char *uci_savedir;
 __private void *uci_malloc(struct uci_context *ctx, size_t size);
 __private void *uci_realloc(struct uci_context *ctx, void *ptr, size_t size);
 __private char *uci_strdup(struct uci_context *ctx, const char *str);
-__private bool uci_validate_str(const char *str, bool name);
+__private bool uci_validate_str(const char *str, bool name, bool package);
 __private void uci_add_delta(struct uci_context *ctx, struct uci_list *list, int cmd, const char *section, const char *option, const char *value);
 __private void uci_free_delta(struct uci_delta *h);
 __private struct uci_package *uci_alloc_package(struct uci_context *ctx, const char *name);
@@ -71,17 +71,17 @@ __private int uci_load_delta(struct uci_context *ctx, struct uci_package *p, boo
 
 static inline bool uci_validate_package(const char *str)
 {
-	return uci_validate_str(str, false);
+	return uci_validate_str(str, false, true);
 }
 
 static inline bool uci_validate_type(const char *str)
 {
-	return uci_validate_str(str, false);
+	return uci_validate_str(str, false, false);
 }
 
 static inline bool uci_validate_name(const char *str)
 {
-	return uci_validate_str(str, true);
+	return uci_validate_str(str, true, false);
 }
 
 /* initialize a list head/item */

@@ -69,18 +69,22 @@ __private char *uci_strdup(struct uci_context *ctx, const char *str)
  * for names, only alphanum and _ is allowed (shell compatibility)
  * for types, we allow more characters
  */
-__private bool uci_validate_str(const char *str, bool name)
+__private bool uci_validate_str(const char *str, bool name, bool package)
 {
 	if (!*str)
 		return false;
 
-	while (*str) {
+	for (; *str; str++) {
 		unsigned char c = *str;
-		if (!isalnum(c) && c != '_') {
-			if (name || (c < 33) || (c > 126))
-				return false;
-		}
-		str++;
+
+		if (isalnum(c) || c == '_')
+			continue;
+
+		if (c == '-' && package)
+			continue;
+
+		if (name || (c < 33) || (c > 126))
+			return false;
 	}
 	return true;
 }
