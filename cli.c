@@ -314,6 +314,7 @@ static int package_cmd(int cmd, char *tuple)
 		if (!(ptr.flags & UCI_LOOKUP_COMPLETE)) {
 			ctx->err = UCI_ERR_NOTFOUND;
 			cli_perror();
+			goto out;
 		}
 		switch(e->type) {
 			case UCI_TYPE_PACKAGE:
