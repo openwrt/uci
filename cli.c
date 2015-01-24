@@ -286,7 +286,7 @@ static int package_cmd(int cmd, char *tuple)
 {
 	struct uci_element *e = NULL;
 	struct uci_ptr ptr;
-	int ret = 0;
+	int ret = 1;
 
 	if (uci_lookup_ptr(ctx, &ptr, tuple, true) != UCI_OK) {
 		cli_perror();
@@ -299,11 +299,12 @@ static int package_cmd(int cmd, char *tuple)
 		uci_show_changes(ptr.p);
 		break;
 	case CMD_COMMIT:
-		if (flags & CLI_FLAG_NOCOMMIT)
-			return 0;
+		if (flags & CLI_FLAG_NOCOMMIT) {
+			ret = 0;
+			goto out;
+		}
 		if (uci_commit(ctx, &ptr.p, false) != UCI_OK) {
 			cli_perror();
-			ret = 1;
 		}
 		break;
 	case CMD_EXPORT:
@@ -313,7 +314,6 @@ static int package_cmd(int cmd, char *tuple)
 		if (!(ptr.flags & UCI_LOOKUP_COMPLETE)) {
 			ctx->err = UCI_ERR_NOTFOUND;
 			cli_perror();
-			ret = 1;
 		}
 		switch(e->type) {
 			case UCI_TYPE_PACKAGE:
@@ -327,11 +327,12 @@ static int package_cmd(int cmd, char *tuple)
 				break;
 			default:
 				/* should not happen */
-				return 1;
+				goto out;
 		}
 		break;
 	}
 
+out:
 	if (ptr.p)
 		uci_unload(ctx, ptr.p);
 	return ret;
