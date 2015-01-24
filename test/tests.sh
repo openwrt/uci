@@ -8,7 +8,7 @@ FULL_SUITE=${TESTS_DIR}"/full_suite.sh"
 
 UCI_BIN="../uci"
 [ -x $UCI_BIN ] || {
-	echo "uci-static is not present."
+	echo "uci is not present." >&2
 	return 1
 }
 UCI="${UCI_BIN} -c ${CONFIG_DIR} -p ${CHANGES_DIR}"

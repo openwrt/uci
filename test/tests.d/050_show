@@ -8,6 +8,9 @@ test_get_parsing()
 	assertFailWithNoReturn "${UCI_Q} show test.section.opt.val."
 	assertFailWithNoReturn "${UCI_Q} show test.section.opt.val.qsdf.qsd"
 	assertFailWithNoReturn "${UCI_Q} show test.section.opt.valqsqsd"
+	assertFailWithNoReturn "${UCI_Q} show test.nilsection"
+	assertFailWithNoReturn "${UCI_Q} show test.nilsection.nilopt"
+	assertFailWithNoReturn "${UCI_Q} show test.section.nilopt"
 }
 
 prepare_get_parsing_multiline() {
