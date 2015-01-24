@@ -431,11 +431,12 @@ uci_lookup_ptr(struct uci_context *ctx, struct uci_ptr *ptr, char *str, bool ext
 complete:
 	ptr->flags |= UCI_LOOKUP_COMPLETE;
 abort:
-	return 0;
+	return UCI_OK;
 
 notfound:
 	UCI_THROW(ctx, UCI_ERR_NOTFOUND);
-	return 0;
+	/* not a chance here */
+	return UCI_ERR_NOTFOUND;
 }
 
 __private struct uci_element *
