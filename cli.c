@@ -305,10 +305,13 @@ static int package_cmd(int cmd, char *tuple)
 		}
 		if (uci_commit(ctx, &ptr.p, false) != UCI_OK) {
 			cli_perror();
+			goto out;
 		}
 		break;
 	case CMD_EXPORT:
-		uci_export(ctx, stdout, ptr.p, true);
+		if (uci_export(ctx, stdout, ptr.p, true) != UCI_OK) {
+			goto out;
+		}
 		break;
 	case CMD_SHOW:
 		if (!(ptr.flags & UCI_LOOKUP_COMPLETE)) {
@@ -332,6 +335,8 @@ static int package_cmd(int cmd, char *tuple)
 		}
 		break;
 	}
+
+	ret = 0;
 
 out:
 	if (ptr.p)
