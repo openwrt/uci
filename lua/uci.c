@@ -994,8 +994,9 @@ luaopen_uci(lua_State *L)
 
 	/* create module */
 	lua_newtable(L);
+	lua_pushvalue(L, -1);
 	luaL_setfuncs(L, uci, 0);
 	lua_setglobal(L, MODNAME);
 
-	return 0;
+	return 1;
 }
