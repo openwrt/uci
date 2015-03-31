@@ -99,9 +99,24 @@ static void uci_delta_save(struct uci_context *ctx, FILE *f,
 int uci_set_savedir(struct uci_context *ctx, const char *dir)
 {
 	char *sdir;
+	struct uci_element *e, *tmp;
+	bool exists = false;
 
 	UCI_HANDLE_ERR(ctx);
 	UCI_ASSERT(ctx, dir != NULL);
+
+	/* Move dir to the end of ctx->delta_path */
+	uci_foreach_element_safe(&ctx->delta_path, tmp, e) {
+		if (!strcmp(e->name, dir)) {
+			exists = true;
+			uci_list_del(&e->list);
+			break;
+		}
+	}
+	if (!exists)
+		UCI_INTERNAL(uci_add_delta_path, ctx, dir);
+	else
+		uci_list_add(&ctx->delta_path, &e->list);
 
 	sdir = uci_strdup(ctx, dir);
 	if (ctx->savedir != uci_savedir)
@@ -113,13 +128,21 @@ int uci_set_savedir(struct uci_context *ctx, const char *dir)
 int uci_add_delta_path(struct uci_context *ctx, const char *dir)
 {
 	struct uci_element *e;
+	struct uci_list *savedir;
 
 	UCI_HANDLE_ERR(ctx);
 	UCI_ASSERT(ctx, dir != NULL);
-	if (!strcmp(dir, ctx->savedir))
-		return -1;
+
+	/* Duplicate delta path is not allowed */
+	uci_foreach_element(&ctx->delta_path, e) {
+		if (!strcmp(e->name, dir))
+			UCI_THROW(ctx, UCI_ERR_DUPLICATE);
+	}
+
 	e = uci_alloc_generic(ctx, UCI_TYPE_PATH, dir, sizeof(struct uci_element));
-	uci_list_add(&ctx->delta_path, &e->list);
+	/* Keep savedir at the end of ctx->delta_path list */
+	savedir = ctx->delta_path.prev;
+	uci_list_insert(savedir->prev, &e->list);
 
 	return 0;
 }
@@ -297,21 +320,25 @@ __private int uci_load_delta(struct uci_context *ctx, struct uci_package *p, boo
 		if ((asprintf(&filename, "%s/%s", e->name, p->e.name) < 0) || !filename)
 			UCI_THROW(ctx, UCI_ERR_MEM);
 
-		uci_load_delta_file(ctx, p, filename, NULL, false);
+		changes += uci_load_delta_file(ctx, p, filename, NULL, false);
 		free(filename);
 	}
 
 	if ((asprintf(&filename, "%s/%s", ctx->savedir, p->e.name) < 0) || !filename)
 		UCI_THROW(ctx, UCI_ERR_MEM);
+	UCI_TRAP_SAVE(ctx, done);
+	f = uci_open_stream(ctx, filename, NULL, SEEK_SET, flush, false);
+	UCI_TRAP_RESTORE(ctx);
 
-	changes = uci_load_delta_file(ctx, p, filename, &f, flush);
 	if (flush && f && (changes > 0)) {
-		rewind(f);
 		if (ftruncate(fileno(f), 0) < 0) {
+			free(filename);
 			uci_close_stream(f);
 			UCI_THROW(ctx, UCI_ERR_IO);
 		}
 	}
+
+done:
 	free(filename);
 	uci_close_stream(f);
 	ctx->err = 0;

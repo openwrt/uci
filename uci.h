@@ -252,6 +252,8 @@ extern int uci_list_configs(struct uci_context *ctx, char ***list);
  * uci_set_savedir: override the default delta save directory
  * @ctx: uci context
  * @dir: directory name
+ *
+ * This will also try adding the specified dir to the end of delta pathes.
  */
 extern int uci_set_savedir(struct uci_context *ctx, const char *dir);
 
@@ -269,8 +271,8 @@ extern int uci_set_confdir(struct uci_context *ctx, const char *dir);
  *
  * This function allows you to add directories, which contain 'overlays'
  * for the active config, that will never be committed.
- * Caller of this API should ensure that no duplicate entries (including the
- * default search path, e.g. `UCI_SAVEDIR') should be added.
+ *
+ * Adding a duplicate directory will cause UCI_ERR_DUPLICATE be returned.
  */
 extern int uci_add_delta_path(struct uci_context *ctx, const char *dir);
 

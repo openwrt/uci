@@ -60,6 +60,7 @@ struct uci_context *uci_alloc_context(void)
 
 	ctx->confdir = (char *) uci_confdir;
 	ctx->savedir = (char *) uci_savedir;
+	uci_add_delta_path(ctx, uci_savedir);
 
 	uci_list_add(&ctx->backends, &uci_file_backend.e.list);
 	ctx->backend = &uci_file_backend;
