@@ -114,9 +114,8 @@ int uci_set_savedir(struct uci_context *ctx, const char *dir)
 		}
 	}
 	if (!exists)
-		UCI_INTERNAL(uci_add_delta_path, ctx, dir);
-	else
-		uci_list_add(&ctx->delta_path, &e->list);
+		e = uci_alloc_generic(ctx, UCI_TYPE_PATH, dir, sizeof(struct uci_element));
+	uci_list_add(&ctx->delta_path, &e->list);
 
 	sdir = uci_strdup(ctx, dir);
 	if (ctx->savedir != uci_savedir)
