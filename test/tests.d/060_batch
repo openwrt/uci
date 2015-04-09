@@ -15,3 +15,29 @@ EOF
 	assertSameFile "${REF_DIR}/batch_set.result" "${CONFIG_DIR}/batch_set"
 }
 
+test_batch_comments()
+{
+	touch ${CONFIG_DIR}/batch_comments
+
+        ${UCI} batch <<EOF
+# first line comment
+set batch_comments.SEC0='section'
+set batch_comments.SEC0.option0='value0'
+
+# two consecutive blank lines
+# two consecutive blank lines
+
+
+set batch_comments.SEC0.option1='"Hello,
+'"  World\""
+set batch_comments.SEC1='section'
+set batch_comments.SEC1.option0="value1"
+
+ 	 # comment line starts with spaces.
+
+commit
+# last line comment
+EOF
+
+	assertSameFile "${REF_DIR}/batch_comments.result" "${CONFIG_DIR}/batch_comments"
+}
