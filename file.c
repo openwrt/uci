@@ -278,10 +278,11 @@ int uci_parse_argument(struct uci_context *ctx, FILE *stream, char **str, char *
 		uci_alloc_parse_context(ctx);
 
 	ctx->pctx->file = stream;
-	if (!*str)
+	if (!*str) {
+		ctx->pctx->pos = 0;
 		uci_getln(ctx, 0);
+	}
 
-	/*FIXME do we need to skip empty lines? */
 	ofs_result = next_arg(ctx, false, false, false);
 	*result = pctx_str(ctx->pctx, ofs_result);
 	*str = pctx_cur_str(ctx->pctx);
