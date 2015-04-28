@@ -687,6 +687,7 @@ int main(int argc, char **argv)
 				break;
 			case 'f':
 				if (input != stdin) {
+					fclose(input);
 					perror("uci");
 					return 1;
 				}
