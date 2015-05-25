@@ -293,13 +293,15 @@ static int uci_load_delta_file(struct uci_context *ctx, struct uci_package *p, c
 
 	UCI_TRAP_SAVE(ctx, done);
 	stream = uci_open_stream(ctx, filename, NULL, SEEK_SET, flush, false);
+	UCI_TRAP_RESTORE(ctx);
+
 	if (p)
 		changes = uci_parse_delta(ctx, stream, p);
-	UCI_TRAP_RESTORE(ctx);
+
 done:
 	if (f)
 		*f = stream;
-	else if (stream)
+	else
 		uci_close_stream(stream);
 	return changes;
 }
