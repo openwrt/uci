@@ -33,7 +33,6 @@
 #include "uci_internal.h"
 
 #define LINEBUF	32
-#define LINEBUF_MAX	4096
 
 /*
  * Fetch a new line from the input stream and resize buffer if necessary
@@ -69,11 +68,10 @@ __private void uci_getln(struct uci_context *ctx, int offset)
 			return;
 		}
 
-		if (pctx->bufsz > LINEBUF_MAX/2)
-			uci_parse_error(ctx, "line too long");
-
 		pctx->bufsz *= 2;
 		pctx->buf = uci_realloc(ctx, pctx->buf, pctx->bufsz);
+		if (!pctx->buf)
+			UCI_THROW(ctx, UCI_ERR_MEM);
 	} while (1);
 }
 
