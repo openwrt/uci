@@ -26,3 +26,22 @@ test_revert_option_multiline()
 	${UCI} revert revert.SEC0.option1
 	assertSameFile "${REF_DIR}/revert_option_multiline.result" "$CHANGES_DIR/revert"
 }
+
+test_revert_option_long()
+{
+	local val="$(head -c 8192 < /dev/zero | tr '\0' 'a')"
+	local res
+
+	touch ${CONFIG_DIR}/p
+
+	${UCI} set p.s=sec
+	${UCI} set p.s.o="$val"
+
+	res="$(${UCI} changes)"
+	assertEquals "p.s='sec'
+p.s.o='$val'" "$res"
+
+	${UCI} revert p
+	res="$(${UCI} changes)"
+	assertEquals "" "$res"
+}
