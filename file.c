@@ -800,7 +800,6 @@ done:
 		UCI_THROW(ctx, UCI_ERR_IO);
 	}
 	free(filename);
-	sync();
 	if (ctx->err)
 		UCI_THROW(ctx, ctx->err);
 }
