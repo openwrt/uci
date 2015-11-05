@@ -303,7 +303,7 @@ uci_lua_foreach(lua_State *L)
 	ctx = find_context(L, &offset);
 	package = luaL_checkstring(L, 1 + offset);
 
-	if (lua_isnil(L, 2))
+	if (lua_isnil(L, 2 + offset))
 		type = NULL;
 	else
 		type = luaL_checkstring(L, 2 + offset);
