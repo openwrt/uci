@@ -113,11 +113,8 @@ find_package(lua_State *L, struct uci_context *ctx, const char *str, bool al)
 		goto done;
 	}
 
-	if (al == true)
+	if (al)
 		uci_load(ctx, name, &p);
-	else if (al) {
-		uci_load(ctx, name, &p);
-	}
 
 done:
 	if (name != str)
