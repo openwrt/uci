@@ -437,8 +437,13 @@ static void uci_parse_config(struct uci_context *ctx)
 	} else {
 		uci_fill_ptr(ctx, &ptr, &pctx->package->e);
 		e = uci_lookup_list(&pctx->package->sections, name);
-		if (e)
+		if (e) {
 			ptr.s = uci_to_section(e);
+
+			if ((ctx->flags & UCI_FLAG_STRICT) && strcmp(ptr.s->type, type))
+				uci_parse_error(ctx, "section of different type overwrites prior section with same name");
+		}
+
 		ptr.section = name;
 		ptr.value = type;
 
