@@ -735,17 +735,6 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 	if ((asprintf(&filename, "%s/.%s.uci-XXXXXX", ctx->confdir, p->e.name) < 0) || !filename)
 		UCI_THROW(ctx, UCI_ERR_MEM);
 
-	if (!mktemp(filename))
-		*filename = 0;
-
-	if (!*filename) {
-		free(filename);
-		UCI_THROW(ctx, UCI_ERR_IO);
-	}
-
-	if ((stat(filename, &statbuf) == 0) && ((statbuf.st_mode & S_IFMT) != S_IFREG))
-		UCI_THROW(ctx, UCI_ERR_IO);
-
 	/* open the config file for writing now, so that it is locked */
 	f1 = uci_open_stream(ctx, p->path, NULL, SEEK_SET, true, true);
 
@@ -779,6 +768,17 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 		if (!uci_load_delta(ctx, p, true))
 			goto done;
 	}
+
+	if (!mktemp(filename))
+		*filename = 0;
+
+	if (!*filename) {
+		free(filename);
+		UCI_THROW(ctx, UCI_ERR_IO);
+	}
+
+	if ((stat(filename, &statbuf) == 0) && ((statbuf.st_mode & S_IFMT) != S_IFREG))
+		UCI_THROW(ctx, UCI_ERR_IO);
 
 	f2 = uci_open_stream(ctx, filename, p->path, SEEK_SET, true, true);
 	uci_export(ctx, f2, p, false);
