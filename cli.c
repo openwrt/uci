@@ -87,9 +87,10 @@ static char *
 uci_lookup_section_ref(struct uci_section *s)
 {
 	struct uci_type_list *ti = type_list;
+	char *ret;
 	int maxlen;
 
-	if (!s->anonymous || !(flags & CLI_FLAG_SHOW_EXT))
+	if (!(flags & CLI_FLAG_SHOW_EXT))
 		return s->e.name;
 
 	/* look up in section type list */
@@ -108,19 +109,25 @@ uci_lookup_section_ref(struct uci_section *s)
 		ti->name = s->type;
 	}
 
-	maxlen = strlen(s->type) + 1 + 2 + 10;
-	if (!typestr) {
-		typestr = malloc(maxlen);
-	} else {
-		typestr = realloc(typestr, maxlen);
-	}
+	if (s->anonymous) {
+		maxlen = strlen(s->type) + 1 + 2 + 10;
+		if (!typestr) {
+			typestr = malloc(maxlen);
+		} else {
+			typestr = realloc(typestr, maxlen);
+		}
 
-	if (typestr)
-		sprintf(typestr, "@%s[%d]", ti->name, ti->idx);
+		if (typestr)
+			sprintf(typestr, "@%s[%d]", ti->name, ti->idx);
+
+		ret = typestr;
+	} else {
+		ret = s->e.name;
+	}
 
 	ti->idx++;
 
-	return typestr;
+	return ret;
 }
 
 static void uci_usage(void)
