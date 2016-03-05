@@ -9,14 +9,22 @@ OPTION(UCI_DEBUG "debugging support" OFF)
 OPTION(UCI_DEBUG_TYPECAST "typecast debugging support" OFF)
 OPTION(BUILD_LUA "build Lua binding" ON)
 
+IF(BUILD_STATIC)
+  FIND_LIBRARY(ubox_library NAMES ubox.a)
+ELSE(BUILD_STATIC)
+  FIND_LIBRARY(ubox_library NAMES ubox)
+ENDIF(BUILD_STATIC)
+
+FIND_PATH(ubox_include_dir libubox/usock.h)
+
 CONFIGURE_FILE( ${CMAKE_SOURCE_DIR}/uci_config.h.in ${CMAKE_SOURCE_DIR}/uci_config.h )
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR} ${ubox_include_dir})
 
 SET(LIB_SOURCES libuci.c file.c util.c delta.c parse.c blob.c)
 
 ADD_LIBRARY(uci SHARED ${LIB_SOURCES})
-TARGET_LINK_LIBRARIES(uci ubox)
+TARGET_LINK_LIBRARIES(uci ${ubox_library})
 SET_TARGET_PROPERTIES(uci PROPERTIES OUTPUT_NAME uci)
 
 ADD_EXECUTABLE(cli cli.c)
