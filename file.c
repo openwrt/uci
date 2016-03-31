@@ -800,9 +800,13 @@ done:
 	free(name);
 	free(path);
 	uci_close_stream(f1);
-	if (do_rename && rename(filename, p->path)) {
-		unlink(filename);
-		UCI_THROW(ctx, UCI_ERR_IO);
+	if (do_rename) {
+		path = realpath(p->path, NULL);
+		if (!path || rename(filename, path)) {
+			unlink(filename);
+			UCI_THROW(ctx, UCI_ERR_IO);
+		}
+		free(path);
 	}
 	free(filename);
 	if (ctx->err)
