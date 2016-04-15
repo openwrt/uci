@@ -5,14 +5,8 @@ PROJECT(uci C)
 SET(CMAKE_INSTALL_PREFIX /)
 
 IF(NOT LUA_CFLAGS)
-	FIND_PROGRAM(PKG_CONFIG pkg-config)
-	IF(PKG_CONFIG)
-		EXECUTE_PROCESS(
-			COMMAND pkg-config --silence-errors --cflags lua5.1
-			OUTPUT_VARIABLE LUA_CFLAGS
-			OUTPUT_STRIP_TRAILING_WHITESPACE
-		)
-	ENDIF()
+	INCLUDE(FindPkgConfig)
+	pkg_search_module(LUA lua5.1 lua-5.1)
 ENDIF()
 
 ADD_DEFINITIONS(-Os -Wall -Werror --std=gnu99 -g3 -I.. ${LUA_CFLAGS})
