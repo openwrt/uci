@@ -933,8 +933,19 @@ uci_lua_list_configs(lua_State *L)
 static int
 uci_lua_gc(lua_State *L)
 {
-	struct uci_context *ctx = find_context(L, NULL);
-	uci_free_context(ctx);
+	struct uci_context **ctx;
+
+	if (!lua_isuserdata(L, 1)) {
+		if (!global_ctx)
+			return 0;
+		ctx = &global_ctx;
+	} else {
+		ctx = luaL_checkudata(L, 1, METANAME);
+		if (!*ctx)
+			return 0;
+	}
+	uci_free_context(*ctx);
+	*ctx = NULL;
 	return 0;
 }
 
@@ -970,6 +981,7 @@ uci_lua_cursor(lua_State *L)
 
 static const luaL_Reg uci[] = {
 	{ "__gc", uci_lua_gc },
+	{ "close", uci_lua_gc },
 	{ "cursor", uci_lua_cursor },
 	{ "load", uci_lua_load },
 	{ "unload", uci_lua_unload },
