@@ -911,6 +911,26 @@ uci_lua_set_savedir(lua_State *L)
 }
 
 static int
+uci_lua_list_configs(lua_State *L)
+{
+	struct uci_context *ctx;
+	char **configs = NULL;
+	char **ptr;
+	int i = 1;
+
+	ctx = find_context(L, NULL);
+	if ((uci_list_configs(ctx, &configs) != UCI_OK) || !configs)
+		return uci_push_status(L, ctx, false);
+	lua_newtable(L);
+	for (ptr = configs; *ptr; ptr++) {
+		lua_pushstring(L, *ptr);
+		lua_rawseti(L, -2, i++);
+	}
+	free(configs);
+	return 1;
+}
+
+static int
 uci_lua_gc(lua_State *L)
 {
 	struct uci_context *ctx = find_context(L, NULL);
@@ -971,6 +991,7 @@ static const luaL_Reg uci[] = {
 	{ "set_confdir", uci_lua_set_confdir },
 	{ "get_savedir", uci_lua_get_savedir },
 	{ "set_savedir", uci_lua_set_savedir },
+	{ "list_configs", uci_lua_list_configs },
 	{ NULL, NULL },
 };
 
