@@ -435,6 +435,7 @@ struct uci_package
 	struct uci_backend *backend;
 	void *priv;
 	int n_section;
+	int name_index;
 	struct uci_list delta;
 	struct uci_list saved_delta;
 };
