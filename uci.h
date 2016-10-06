@@ -370,7 +370,7 @@ enum uci_option_type {
 enum uci_flags {
 	UCI_FLAG_STRICT =        (1 << 0), /* strict mode for the parser */
 	UCI_FLAG_PERROR =        (1 << 1), /* print parser error messages */
-	UCI_FLAG_EXPORT_NAME =   (1 << 2), /* when exporting, name unnamed sections */
+	UCI_FLAG_EXPORT_NAME =   (1 << 2), /* when exporting, name unnamed sections [unused] */
 	UCI_FLAG_SAVED_DELTA = (1 << 3), /* store the saved delta in memory as well */
 };
 
