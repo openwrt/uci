@@ -1,5 +1,5 @@
-sockd.@main[0]=main
-sockd.@main[0].version='1.4.1'
+sockd.cfg01ca82=main
+sockd.cfg01ca82.version='1.4.1'
 sockd.instance0=sockd
 sockd.instance0.enabled='1'
 sockd.instance0.internal_network='vpn'
