@@ -156,6 +156,8 @@ static void uci_usage(void)
 		"\t-d <str>   set the delimiter for list values in uci show\n"
 		"\t-f <file>  use <file> as input instead of stdin\n"
 		"\t-m         when importing, merge data into an existing package\n"
+		"\t-n         name unnamed sections on export (default)\n"
+		"\t-N         don't name unnamed sections\n"
 		"\t-p <path>  add a search path for config change files\n"
 		"\t-P <path>  add a search path for config change files and use as default\n"
 		"\t-q         quiet mode (don't print error messages)\n"
@@ -727,6 +729,12 @@ int main(int argc, char **argv)
 				ctx->flags &= ~UCI_FLAG_STRICT;
 				ctx->flags |= UCI_FLAG_PERROR;
 				break;
+			case 'n':
+				ctx->flags |= UCI_FLAG_EXPORT_NAME;
+				break;
+			case 'N':
+				ctx->flags &= ~UCI_FLAG_EXPORT_NAME;
+				break;
 			case 'p':
 				uci_add_delta_path(ctx, optarg);
 				break;
@@ -740,10 +748,6 @@ int main(int argc, char **argv)
 				break;
 			case 'X':
 				flags &= ~CLI_FLAG_SHOW_EXT;
-				break;
-			case 'n':
-			case 'N':
-				/* obsolete */
 				break;
 			default:
 				uci_usage();

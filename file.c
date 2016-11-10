@@ -288,27 +288,6 @@ int uci_parse_argument(struct uci_context *ctx, FILE *stream, char **str, char *
 	return 0;
 }
 
-/*
- * Fixup sections functions does the fixup of all sections for given package.
- * It is used as a preprocessing step for fixing up existing anonymous sections
- * from configurations.
- *
- * It uses uci_fixup_section() from list.c and then adds delta changes.
- */
-static void
-uci_fixup_sections(struct uci_context *ctx, struct uci_package *p)
-{
-	struct uci_element *e;
-	struct uci_section *s;
-
-	uci_foreach_element(&p->sections, e) {
-		s = uci_to_section(e);
-		s->package->name_index++;
-		uci_fixup_section(ctx, s);
-		s->anonymous = false;
-	}
-}
-
 static int
 uci_fill_ptr(struct uci_context *ctx, struct uci_ptr *ptr, struct uci_element *e)
 {
@@ -431,6 +410,7 @@ static void uci_parse_config(struct uci_context *ctx)
 	char *name;
 	char *type;
 
+	uci_fixup_section(ctx, ctx->pctx->section);
 	if (!ctx->pctx->package) {
 		if (!ctx->pctx->name)
 			uci_parse_error(ctx, "attempting to import a file without a package name");
@@ -626,7 +606,8 @@ static void uci_export_package(struct uci_package *p, FILE *stream, bool header)
 	uci_foreach_element(&p->sections, s) {
 		struct uci_section *sec = uci_to_section(s);
 		fprintf(stream, "\nconfig %s", uci_escape(ctx, sec->type));
-		fprintf(stream, " '%s'", uci_escape(ctx, sec->e.name));
+		if (!sec->anonymous || (ctx->flags & UCI_FLAG_EXPORT_NAME))
+			fprintf(stream, " '%s'", uci_escape(ctx, sec->e.name));
 		fprintf(stream, "\n");
 		uci_foreach_element(&sec->options, o) {
 			struct uci_option *opt = uci_to_option(o);
@@ -710,6 +691,7 @@ error:
 			UCI_THROW(ctx, ctx->err);
 	}
 
+	uci_fixup_section(ctx, ctx->pctx->section);
 	if (!pctx->package && name)
 		uci_switch_config(ctx);
 	if (package)
@@ -717,7 +699,6 @@ error:
 	if (pctx->merge)
 		pctx->package = NULL;
 
-	uci_fixup_sections(ctx, *package);
 	pctx->name = NULL;
 	uci_switch_config(ctx);
 
@@ -903,7 +884,6 @@ static struct uci_package *uci_file_load(struct uci_context *ctx, const char *na
 	char *filename;
 	bool confdir;
 	FILE *file = NULL;
-	size_t n_change;
 
 	switch (name[0]) {
 	case '.':
@@ -933,8 +913,7 @@ static struct uci_package *uci_file_load(struct uci_context *ctx, const char *na
 	if (package) {
 		package->path = filename;
 		package->has_delta = confdir;
-		n_change = uci_load_delta(ctx, package, false);
-		package->name_index += n_change;
+		uci_load_delta(ctx, package, false);
 	}
 
 done:

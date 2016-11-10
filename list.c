@@ -150,7 +150,7 @@ __private void uci_fixup_section(struct uci_context *ctx, struct uci_section *s)
 	struct uci_element *e;
 	char buf[16];
 
-	if (!s || !s->anonymous)
+	if (!s || s->e.name)
 		return;
 
 	/*
@@ -175,7 +175,7 @@ __private void uci_fixup_section(struct uci_context *ctx, struct uci_section *s)
 			break;
 		}
 	}
-	sprintf(buf, "cfg%02x%04x", s->package->name_index, hash % (1 << 16));
+	sprintf(buf, "cfg%02x%04x", ++s->package->n_section, hash % (1 << 16));
 	s->e.name = uci_strdup(ctx, buf);
 }
 
@@ -274,7 +274,7 @@ uci_lookup_list(struct uci_list *list, const char *name)
 	struct uci_element *e;
 
 	uci_foreach_element(list, e) {
-		if (e->name && !strcmp(e->name, name))
+		if (!strcmp(e->name, name))
 			return e;
 	}
 	return NULL;
