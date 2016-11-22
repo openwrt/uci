@@ -835,7 +835,7 @@ static char **uci_list_config_files(struct uci_context *ctx)
 {
 	char **configs;
 	glob_t globbuf;
-	int size, i;
+	int size, i, j, skipped;
 	char *buf;
 	char *dir;
 
@@ -847,18 +847,22 @@ static char **uci_list_config_files(struct uci_context *ctx)
 	}
 
 	size = sizeof(char *) * (globbuf.gl_pathc + 1);
+	skipped = 0;
 	for(i = 0; i < globbuf.gl_pathc; i++) {
 		char *p;
 
 		p = get_filename(globbuf.gl_pathv[i]);
-		if (!p)
+		if (!p) {
+			skipped++;
 			continue;
+		}
 
 		size += strlen(p) + 1;
 	}
 
-	configs = uci_malloc(ctx, size);
-	buf = (char *) &configs[globbuf.gl_pathc + 1];
+	configs = uci_malloc(ctx, size - skipped);
+	buf = (char *) &configs[globbuf.gl_pathc + 1 - skipped];
+	j = 0;
 	for(i = 0; i < globbuf.gl_pathc; i++) {
 		char *p;
 
@@ -869,7 +873,7 @@ static char **uci_list_config_files(struct uci_context *ctx)
 		if (!uci_validate_package(p))
 			continue;
 
-		configs[i] = buf;
+		configs[j++] = buf;
 		strcpy(buf, p);
 		buf += strlen(buf) + 1;
 	}
