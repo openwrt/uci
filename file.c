@@ -70,8 +70,6 @@ __private void uci_getln(struct uci_context *ctx, int offset)
 
 		pctx->bufsz *= 2;
 		pctx->buf = uci_realloc(ctx, pctx->buf, pctx->bufsz);
-		if (!pctx->buf)
-			UCI_THROW(ctx, UCI_ERR_MEM);
 	} while (1);
 }
 
