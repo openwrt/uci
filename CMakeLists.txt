@@ -8,12 +8,7 @@ ADD_DEFINITIONS(-Os -Wall -Werror --std=gnu99 -g3 -I. -DUCI_PREFIX="${CMAKE_INST
 OPTION(UCI_DEBUG "debugging support" OFF)
 OPTION(UCI_DEBUG_TYPECAST "typecast debugging support" OFF)
 OPTION(BUILD_LUA "build Lua binding" ON)
-
-IF(BUILD_STATIC)
-  FIND_LIBRARY(ubox_library NAMES ubox.a)
-ELSE(BUILD_STATIC)
-  FIND_LIBRARY(ubox_library NAMES ubox)
-ENDIF(BUILD_STATIC)
+OPTION(BUILD_STATIC "statically linking uci" OFF)
 
 FIND_PATH(ubox_include_dir libubox/usock.h)
 
@@ -23,13 +18,26 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR} ${ubox_include_dir})
 
 SET(LIB_SOURCES libuci.c file.c util.c delta.c parse.c blob.c)
 
+FIND_LIBRARY(ubox NAMES ubox)
+IF(BUILD_STATIC)
+  FIND_LIBRARY(ubox-static NAMES libubox.a)
+ENDIF(BUILD_STATIC)
+
 ADD_LIBRARY(uci SHARED ${LIB_SOURCES})
-TARGET_LINK_LIBRARIES(uci ${ubox_library})
 SET_TARGET_PROPERTIES(uci PROPERTIES OUTPUT_NAME uci)
+TARGET_LINK_LIBRARIES(uci ${ubox})
+
+ADD_LIBRARY(uci-static STATIC ${LIB_SOURCES})
+SET_TARGET_PROPERTIES(uci-static PROPERTIES OUTPUT_NAME uci)
+TARGET_LINK_LIBRARIES(uci-static ${ubox-static})
 
 ADD_EXECUTABLE(cli cli.c)
 SET_TARGET_PROPERTIES(cli PROPERTIES OUTPUT_NAME uci)
-TARGET_LINK_LIBRARIES(cli uci)
+IF(BUILD_STATIC)
+  TARGET_LINK_LIBRARIES(cli uci-static ${ubox-static})
+ELSE(BUILD_STATIC)
+  TARGET_LINK_LIBRARIES(cli uci ubox)
+ENDIF(BUILD_STATIC)
 
 ADD_LIBRARY(ucimap STATIC ucimap.c)
 
