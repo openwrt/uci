@@ -188,7 +188,7 @@ uci_blob_diff(struct blob_attr **tb1, struct blob_attr **tb2,
 mark:
 		ret = true;
 		if (diff)
-			bitfield_set(diff, i);
+			uci_bitfield_set(diff, i);
 		else
 			return ret;
 	}

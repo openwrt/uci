@@ -689,6 +689,15 @@ uci_lookup_option_string(struct uci_context *ctx, struct uci_section *s, const c
 	return o->v.string;
 }
 
+#ifndef BITS_PER_LONG
+#define BITS_PER_LONG (8 * sizeof(unsigned long))
+#endif
+
+static inline void uci_bitfield_set(unsigned long *bits, int bit)
+{
+	bits[bit / BITS_PER_LONG] |= (1UL << (bit % BITS_PER_LONG));
+}
+
 #ifdef __cplusplus
 }
 #endif
