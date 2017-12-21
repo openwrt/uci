@@ -144,7 +144,7 @@ static unsigned int djbhash(unsigned int hash, char *str)
 }
 
 /* fix up an unnamed section, e.g. after adding options to it */
-__private void uci_fixup_section(struct uci_context *ctx, struct uci_section *s)
+static void uci_fixup_section(struct uci_context *ctx, struct uci_section *s)
 {
 	unsigned int hash = ~0;
 	struct uci_element *e;
@@ -535,7 +535,8 @@ int uci_add_section(struct uci_context *ctx, struct uci_package *p, const char *
 	UCI_HANDLE_ERR(ctx);
 	UCI_ASSERT(ctx, p != NULL);
 	s = uci_alloc_section(p, type, NULL);
-	uci_fixup_section(ctx, s);
+	if (s && s->anonymous)
+		uci_fixup_section(ctx, s);
 	*res = s;
 	if (!internal && p->has_delta)
 		uci_add_delta(ctx, &p->delta, UCI_CMD_ADD, s->e.name, NULL, type);

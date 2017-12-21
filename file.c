@@ -408,7 +408,6 @@ static void uci_parse_config(struct uci_context *ctx)
 	char *name;
 	char *type;
 
-	uci_fixup_section(ctx, ctx->pctx->section);
 	if (!ctx->pctx->package) {
 		if (!ctx->pctx->name)
 			uci_parse_error(ctx, "attempting to import a file without a package name");
@@ -689,7 +688,6 @@ error:
 			UCI_THROW(ctx, ctx->err);
 	}
 
-	uci_fixup_section(ctx, ctx->pctx->section);
 	if (!pctx->package && name)
 		uci_switch_config(ctx);
 	if (package)

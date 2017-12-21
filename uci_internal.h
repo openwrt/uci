@@ -61,7 +61,6 @@ __private void uci_alloc_parse_context(struct uci_context *ctx);
 
 __private void uci_cleanup(struct uci_context *ctx);
 __private struct uci_element *uci_lookup_list(struct uci_list *list, const char *name);
-__private void uci_fixup_section(struct uci_context *ctx, struct uci_section *s);
 __private void uci_free_package(struct uci_package **package);
 __private struct uci_element *uci_alloc_generic(struct uci_context *ctx, int type, const char *name, int size);
 __private void uci_free_element(struct uci_element *e);
