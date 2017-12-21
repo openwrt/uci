@@ -175,7 +175,7 @@ static void uci_fixup_section(struct uci_context *ctx, struct uci_section *s)
 			break;
 		}
 	}
-	sprintf(buf, "cfg%02x%04x", ++s->package->n_section, hash % (1 << 16));
+	sprintf(buf, "cfg%02x%04x", s->package->n_section, hash % (1 << 16));
 	s->e.name = uci_strdup(ctx, buf);
 }
 
