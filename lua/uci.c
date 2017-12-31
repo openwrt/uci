@@ -375,6 +375,7 @@ uci_lua_get_any(lua_State *L, bool all)
 	struct uci_element *e = NULL;
 	struct uci_ptr ptr;
 	int offset = 0;
+	int nret = 1;
 	char *s = NULL;
 	int err = UCI_ERR_NOTFOUND;
 
@@ -400,10 +401,14 @@ uci_lua_get_any(lua_State *L, bool all)
 			uci_push_package(L, ptr.p);
 			break;
 		case UCI_TYPE_SECTION:
-			if (all)
+			if (all) {
 				uci_push_section(L, ptr.s, -1);
-			else
+			}
+			else {
 				lua_pushstring(L, ptr.s->type);
+				lua_pushstring(L, ptr.s->e.name);
+				nret++;
+			}
 			break;
 		case UCI_TYPE_OPTION:
 			uci_push_option(L, ptr.o);
@@ -415,7 +420,7 @@ uci_lua_get_any(lua_State *L, bool all)
 	if (s)
 		free(s);
 	if (!err)
-		return 1;
+		return nret;
 
 error:
 	if (s)
