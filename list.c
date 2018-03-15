@@ -12,8 +12,9 @@
  * GNU Lesser General Public License for more details.
  */
 
-static void uci_list_set_pos(struct uci_list *head, struct uci_list *ptr, int pos)
+static bool uci_list_set_pos(struct uci_list *head, struct uci_list *ptr, int pos)
 {
+	struct uci_list *old_head = ptr->prev;
 	struct uci_list *new_head = head;
 	struct uci_element *p = NULL;
 
@@ -25,6 +26,8 @@ static void uci_list_set_pos(struct uci_list *head, struct uci_list *ptr, int po
 	}
 
 	uci_list_add(new_head->next, ptr);
+
+	return (old_head != new_head);
 }
 
 static inline void uci_list_fixup(struct uci_list *ptr)
@@ -514,12 +517,13 @@ int uci_reorder_section(struct uci_context *ctx, struct uci_section *s, int pos)
 {
 	struct uci_package *p = s->package;
 	bool internal = ctx && ctx->internal;
+	bool changed = false;
 	char order[32];
 
 	UCI_HANDLE_ERR(ctx);
 
-	uci_list_set_pos(&s->package->sections, &s->e.list, pos);
-	if (!internal && p->has_delta) {
+	changed = uci_list_set_pos(&s->package->sections, &s->e.list, pos);
+	if (!internal && p->has_delta && changed) {
 		sprintf(order, "%d", pos);
 		uci_add_delta(ctx, &p->delta, UCI_CMD_REORDER, s->e.name, NULL, order);
 	}
