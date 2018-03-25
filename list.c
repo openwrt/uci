@@ -699,11 +699,15 @@ int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 		ptr->s = uci_alloc_section(ptr->p, ptr->value, ptr->section);
 		ptr->last = &ptr->s->e;
 	} else if (ptr->o && ptr->option) { /* update option */
+		struct uci_option *o;
+
 		if ((ptr->o->type == UCI_TYPE_STRING) &&
 			!strcmp(ptr->o->v.string, ptr->value))
 			return 0;
-		uci_free_option(ptr->o);
+
+		o = ptr->o;
 		ptr->o = uci_alloc_option(ptr->s, ptr->option, ptr->value);
+		uci_free_option(o);
 		ptr->last = &ptr->o->e;
 	} else if (ptr->s && ptr->section) { /* update section */
 		char *s = uci_strdup(ctx, ptr->value);
