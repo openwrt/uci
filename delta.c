@@ -163,6 +163,9 @@ static inline int uci_parse_delta_tuple(struct uci_context *ctx, struct uci_ptr 
 	int c;
 
 	UCI_INTERNAL(uci_parse_argument, ctx, ctx->pctx->file, &str, &arg);
+	if (str && *str) {
+		goto error;
+	}
 	for (c = 0; c <= __UCI_CMD_LAST; c++) {
 		if (uci_command_char[c] == *arg)
 			break;
@@ -179,6 +182,9 @@ static inline int uci_parse_delta_tuple(struct uci_context *ctx, struct uci_ptr 
 		goto error;
 	if (ptr->flags & UCI_LOOKUP_EXTENDED)
 		goto error;
+	if (c != UCI_CMD_REMOVE && !ptr->value) {
+		goto error;
+	}
 
 	switch(c) {
 	case UCI_CMD_REORDER:
