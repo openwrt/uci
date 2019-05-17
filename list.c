@@ -182,6 +182,32 @@ static void uci_fixup_section(struct uci_context *ctx, struct uci_section *s)
 	s->e.name = uci_strdup(ctx, buf);
 }
 
+/* fix up option list HEAD pointers and pointer to section in options */
+static void uci_section_fixup_options(struct uci_section *s, bool no_options)
+{
+	struct uci_element *e;
+
+	if (no_options) {
+		/*
+		 * enforce empty list pointer state (s->next == s) when original
+		 * section had no options in the first place
+		 */
+		uci_list_init(&s->options);
+		return;
+	}
+
+	/* fix pointers to HEAD at end/beginning of list */
+	uci_list_fixup(&s->options);
+
+	/* fix back pointer to section in options */
+	uci_foreach_element(&s->options, e) {
+		struct uci_option *o;
+
+		o = uci_to_option(e);
+		o->section = s;
+	}
+}
+
 static struct uci_section *
 uci_alloc_section(struct uci_package *p, const char *type, const char *name)
 {
@@ -713,10 +739,15 @@ int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 		char *s = uci_strdup(ctx, ptr->value);
 
 		if (ptr->s->type == uci_dataptr(ptr->s)) {
+			/* drop the in-section storage of type name */
+			bool no_options;
+
+			no_options = uci_list_empty(&ptr->s->options);
 			ptr->last = NULL;
 			ptr->last = uci_realloc(ctx, ptr->s, sizeof(struct uci_section));
 			ptr->s = uci_to_section(ptr->last);
 			uci_list_fixup(&ptr->s->e.list);
+			uci_section_fixup_options(ptr->s, no_options);
 		} else {
 			free(ptr->s->type);
 		}
