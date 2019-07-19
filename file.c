@@ -28,6 +28,7 @@
 #include <glob.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include "uci.h"
 #include "uci_internal.h"
@@ -723,8 +724,8 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 	char *name = NULL;
 	char *path = NULL;
 	char *filename = NULL;
-	struct stat statbuf;
 	bool do_rename = false;
+	int fd;
 
 	if (!p->path) {
 		if (overwrite)
@@ -770,18 +771,20 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 			goto done;
 	}
 
-	if (!mktemp(filename))
-		*filename = 0;
-
-	if (!*filename) {
-		free(filename);
-		UCI_THROW(ctx, UCI_ERR_IO);
-	}
-
-	if ((stat(filename, &statbuf) == 0) && ((statbuf.st_mode & S_IFMT) != S_IFREG))
+	fd = mkstemp(filename);
+	if (fd == -1)
 		UCI_THROW(ctx, UCI_ERR_IO);
 
-	f2 = uci_open_stream(ctx, filename, p->path, SEEK_SET, true, true);
+	if ((flock(fd, LOCK_EX) < 0) && (errno != ENOSYS))
+		UCI_THROW(ctx, UCI_ERR_IO);
+
+	if (lseek(fd, 0, SEEK_SET) < 0)
+		UCI_THROW(ctx, UCI_ERR_IO);
+
+	f2 = fdopen(fd, "w+");
+	if (!f2)
+		UCI_THROW(ctx, UCI_ERR_IO);
+
 	uci_export(ctx, f2, p, false);
 
 	fflush(f2);
