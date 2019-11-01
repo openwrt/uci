@@ -6,7 +6,7 @@ CHANGES_DIR="/tmp/.uci"
 TMP_DIR=${TESTS_DIR}"/tmp"
 FULL_SUITE=${TESTS_DIR}"/full_suite.sh"
 
-UCI_BIN="../uci"
+UCI_BIN=${UCI_BIN:-"../uci"}
 [ -x $UCI_BIN ] || {
 	echo "uci is not present." >&2
 	return 1
