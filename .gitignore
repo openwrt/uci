@@ -10,4 +10,4 @@ install_manifest.txt
 
 uci
 uci_config.h
-test/save
+tests/shunit2/save
