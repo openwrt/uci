@@ -623,8 +623,8 @@ int uci_add_list(struct uci_context *ctx, struct uci_ptr *ptr)
 {
 	/* NB: UCI_INTERNAL use means without delta tracking */
 	bool internal = ctx && ctx->internal;
-	struct uci_option *prev = NULL;
-	const char *value2 = NULL;
+	struct uci_option *volatile prev = NULL;
+	const char *volatile value2 = NULL;
 
 	UCI_HANDLE_ERR(ctx);
 

@@ -721,10 +721,10 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 {
 	struct uci_package *p = *package;
 	FILE *f1, *f2 = NULL;
-	char *name = NULL;
-	char *path = NULL;
+	char *volatile name = NULL;
+	char *volatile path = NULL;
 	char *filename = NULL;
-	bool do_rename = false;
+	volatile bool do_rename = false;
 	int fd;
 
 	if (!p->path) {
@@ -881,12 +881,13 @@ static char **uci_list_config_files(struct uci_context *ctx)
 	return configs;
 }
 
-static struct uci_package *uci_file_load(struct uci_context *ctx, const char *name)
+static struct uci_package *uci_file_load(struct uci_context *ctx,
+					 const char *volatile name)
 {
 	struct uci_package *package = NULL;
 	char *filename;
 	bool confdir;
-	FILE *file = NULL;
+	FILE *volatile file = NULL;
 
 	switch (name[0]) {
 	case '.':
