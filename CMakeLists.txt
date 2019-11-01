@@ -43,6 +43,11 @@ ADD_LIBRARY(ucimap STATIC ucimap.c)
 
 ADD_SUBDIRECTORY(lua)
 
+IF(UNIT_TESTING)
+  ENABLE_TESTING()
+  ADD_SUBDIRECTORY(tests)
+ENDIF()
+
 INSTALL(FILES uci.h uci_config.h uci_blob.h ucimap.h
 	DESTINATION include
 )
