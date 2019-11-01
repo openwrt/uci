@@ -7,7 +7,7 @@ TMP_DIR=${TESTS_DIR}"/tmp"
 FULL_SUITE=${TESTS_DIR}"/full_suite.sh"
 
 UCI_BIN=${UCI_BIN:-"../uci"}
-[ -x $UCI_BIN ] || {
+[ -x "$UCI_BIN" ] || {
 	echo "uci is not present." >&2
 	return 1
 }
@@ -60,9 +60,9 @@ assertFailWithNoReturn() {
 }
 EOF
 
-for suite in $(ls ${SCRIPTS_DIR}/*)
+for suite in "${SCRIPTS_DIR}"/*
 do
-	cat ${suite} >> ${FULL_SUITE}
+	cat "${suite}" >> ${FULL_SUITE}
 done
 
 echo ". ${DO_TEST}" >> ${FULL_SUITE}
