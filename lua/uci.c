@@ -620,8 +620,10 @@ uci_lua_set(lua_State *L)
 	case 4:
 		/* Format: uci.set("p", "s", "o", "v") */
 		if (lua_istable(L, nargs)) {
-			if (lua_rawlen(L, nargs) < 1)
+			if (lua_rawlen(L, nargs) < 1) {
+				free(s);
 				return luaL_error(L, "Cannot set an uci option to an empty table value");
+			}
 			lua_rawgeti(L, nargs, 1);
 			ptr.value = luaL_checkstring(L, -1);
 			lua_pop(L, 1);
