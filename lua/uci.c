@@ -880,16 +880,17 @@ uci_lua_changes(lua_State *L)
 	lua_newtable(L);
 	if (package) {
 		uci_lua_changes_pkg(L, ctx, package);
-	} else {
-		if (uci_list_configs(ctx, &config) != 0)
-			goto done;
-
-		for(i = 0; config[i] != NULL; i++) {
-			uci_lua_changes_pkg(L, ctx, config[i]);
-		}
+		return 1;
 	}
 
-done:
+	if ((uci_list_configs(ctx, &config) != UCI_OK) || !config)
+		return 1;
+
+	for (i = 0; config[i] != NULL; i++) {
+		uci_lua_changes_pkg(L, ctx, config[i]);
+	}
+
+	free(config);
 	return 1;
 }
 
