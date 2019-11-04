@@ -198,6 +198,7 @@ static inline int uci_parse_delta_tuple(struct uci_context *ctx, struct uci_ptr 
 	case UCI_CMD_LIST_ADD:
 		if (!ptr->option)
 			goto error;
+		/* fall through */
 	case UCI_CMD_LIST_DEL:
 		if (!ptr->option)
 			goto error;

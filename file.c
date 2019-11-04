@@ -569,7 +569,7 @@ static const char *uci_escape(struct uci_context *ctx, const char *str)
 		len = end - str;
 
 		/* make sure that we have enough room in the buffer */
-		while (ofs + len + sizeof(UCI_QUOTE_ESCAPE) + 1 > ctx->bufsz) {
+		while (ofs + len + (int) sizeof(UCI_QUOTE_ESCAPE) + 1 > ctx->bufsz) {
 			ctx->bufsz *= 2;
 			ctx->buf = uci_realloc(ctx, ctx->buf, ctx->bufsz);
 		}
@@ -834,7 +834,8 @@ static char **uci_list_config_files(struct uci_context *ctx)
 {
 	char **configs;
 	glob_t globbuf;
-	int size, i, j, skipped;
+	int size, j, skipped;
+	size_t i;
 	char *buf;
 	char *dir;
 

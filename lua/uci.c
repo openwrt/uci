@@ -605,7 +605,8 @@ uci_lua_set(lua_State *L)
 	int err = UCI_ERR_MEM;
 	char *s = NULL;
 	const char *v;
-	int i, nargs, offset = 0;
+	unsigned int i;
+	int nargs, offset = 0;
 
 	ctx = find_context(L, &offset);
 	nargs = lua_gettop(L);

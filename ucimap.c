@@ -134,7 +134,7 @@ void
 ucimap_free_section(struct uci_map *map, struct ucimap_section_data *sd)
 {
 	void *section;
-	int i;
+	unsigned int i;
 
 	section = ucimap_section_ptr(sd);
 	if (sd->ref)
@@ -234,7 +234,7 @@ ucimap_free_item(struct ucimap_section_data *sd, void *item)
 	struct ucimap_alloc_custom *ac;
 	struct ucimap_alloc *a;
 	void *ptr = *((void **) item);
-	int i;
+	unsigned int i;
 
 	if (!ptr)
 		return;
@@ -270,7 +270,8 @@ ucimap_resize_list(struct ucimap_section_data *sd, struct ucimap_list **list, in
 {
 	struct ucimap_list *new;
 	struct ucimap_alloc *a;
-	int i, offset = 0;
+	unsigned int i;
+	int offset = 0;
 	int size = sizeof(struct ucimap_list) + items * sizeof(union ucimap_data);
 
 	if (!*list) {
@@ -360,7 +361,7 @@ ucimap_add_value(union ucimap_data *data, struct uci_optmap *om, struct ucimap_s
 	switch(om->type & UCIMAP_SUBTYPE) {
 	case UCIMAP_STRING:
 		if ((om->data.s.maxlen > 0) &&
-			(strlen(str) > om->data.s.maxlen))
+			(strlen(str) > (unsigned) om->data.s.maxlen))
 			return;
 
 		s = strdup(str);
@@ -532,7 +533,7 @@ ucimap_get_type_name(int type)
 static bool
 ucimap_check_optmap_type(struct uci_sectionmap *sm, struct uci_optmap *om)
 {
-	unsigned int type;
+	int type;
 
 	if (unlikely(sm->type_name != om->type_name) &&
 	    unlikely(strcmp(sm->type_name, om->type_name) != 0)) {
@@ -746,7 +747,7 @@ ucimap_set_changed(struct ucimap_section_data *sd, void *field)
 	void *section = ucimap_section_ptr(sd);
 	struct uci_sectionmap *sm = sd->sm;
 	struct uci_optmap *om;
-	int ofs = (char *)field - (char *)section;
+	unsigned int ofs = (char *)field - (char *)section;
 	int i = 0;
 
 	ucimap_foreach_option(sm, om) {
@@ -868,7 +869,7 @@ ucimap_parse(struct uci_map *map, struct uci_package *pkg)
 	struct uci_element *e;
 	struct ucimap_section_data *sd, **sd_tail;
 	struct ucimap_fixup *f;
-	int i;
+	unsigned int i;
 
 	sd_tail = map->sdata_tail;
 	map->parsed = false;
