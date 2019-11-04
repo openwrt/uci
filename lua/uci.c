@@ -386,11 +386,11 @@ uci_lua_get_any(lua_State *L, bool all)
 
 	lookup_ptr(ctx, &ptr, NULL, true);
 	if (!all && !ptr.s) {
-		err = UCI_ERR_INVAL;
+		ctx->err = UCI_ERR_INVAL;
 		goto error;
 	}
 	if (!(ptr.flags & UCI_LOOKUP_COMPLETE)) {
-		err = UCI_ERR_NOTFOUND;
+		ctx->err = UCI_ERR_NOTFOUND;
 		goto error;
 	}
 
@@ -414,7 +414,7 @@ uci_lua_get_any(lua_State *L, bool all)
 			uci_push_option(L, ptr.o);
 			break;
 		default:
-			err = UCI_ERR_INVAL;
+			ctx->err = UCI_ERR_INVAL;
 			goto error;
 	}
 	if (s)
@@ -521,7 +521,7 @@ uci_lua_rename(lua_State *L)
 		ptr.option = NULL;
 		break;
 	default:
-		err = UCI_ERR_INVAL;
+		ctx->err = UCI_ERR_INVAL;
 		goto error;
 	}
 
@@ -530,7 +530,7 @@ uci_lua_rename(lua_State *L)
 		goto error;
 
 	if (((ptr.s == NULL) && (ptr.option != NULL)) || (ptr.value == NULL)) {
-		err = UCI_ERR_INVAL;
+		ctx->err = UCI_ERR_INVAL;
 		goto error;
 	}
 
@@ -562,7 +562,7 @@ uci_lua_reorder(lua_State *L)
 	case 1:
 		/* Format: uci.set("p.s=v") or uci.set("p.s=v") */
 		if (ptr.option) {
-			err = UCI_ERR_INVAL;
+			ctx->err = UCI_ERR_INVAL;
 			goto error;
 		}
 		break;
@@ -572,7 +572,7 @@ uci_lua_reorder(lua_State *L)
 		ptr.option = NULL;
 		break;
 	default:
-		err = UCI_ERR_INVAL;
+		ctx->err = UCI_ERR_INVAL;
 		goto error;
 	}
 
@@ -581,7 +581,7 @@ uci_lua_reorder(lua_State *L)
 		goto error;
 
 	if ((ptr.s == NULL) || (ptr.value == NULL)) {
-		err = UCI_ERR_INVAL;
+		ctx->err = UCI_ERR_INVAL;
 		goto error;
 	}
 
@@ -638,7 +638,7 @@ uci_lua_set(lua_State *L)
 		ptr.option = NULL;
 		break;
 	default:
-		err = UCI_ERR_INVAL;
+		ctx->err = UCI_ERR_INVAL;
 		goto error;
 	}
 
@@ -647,7 +647,7 @@ uci_lua_set(lua_State *L)
 		goto error;
 
 	if (((ptr.s == NULL) && (ptr.option != NULL)) || (ptr.value == NULL)) {
-		err = UCI_ERR_INVAL;
+		ctx->err = UCI_ERR_INVAL;
 		goto error;
 	}
 
