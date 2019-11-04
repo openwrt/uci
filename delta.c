@@ -392,7 +392,7 @@ static void uci_filter_delta(struct uci_context *ctx, const char *name, const ch
 				match = false;
 		}
 
-		if (!match) {
+		if (!match && ptr.section) {
 			uci_add_delta(ctx, &list, c,
 				ptr.section, ptr.option, ptr.value);
 		}
