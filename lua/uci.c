@@ -1006,7 +1006,7 @@ uci_lua_cursor(lua_State *L)
 		case 1:
 			if (lua_isstring(L, 1) &&
 				(uci_set_confdir(*u, luaL_checkstring(L, 1)) != UCI_OK))
-				return luaL_error(L, "Unable to set savedir");
+				return luaL_error(L, "Unable to set confdir");
 			break;
 		default:
 			break;
