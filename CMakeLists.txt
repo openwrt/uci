@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 2.6)
 PROJECT(uci C)
 
 SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
-ADD_DEFINITIONS(-Os -Wall -Werror -Wclobbered --std=gnu99 -g3 -I. -DUCI_PREFIX="${CMAKE_INSTALL_PREFIX}")
+ADD_DEFINITIONS(-Os -Wall -Werror -Wextra --std=gnu99 -g3 -I. -DUCI_PREFIX="${CMAKE_INSTALL_PREFIX}")
+ADD_DEFINITIONS(-Wno-unused-parameter)
 
 OPTION(UCI_DEBUG "debugging support" OFF)
 OPTION(UCI_DEBUG_TYPECAST "typecast debugging support" OFF)
