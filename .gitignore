@@ -6,8 +6,11 @@ CMakeFiles
 *.a
 *.so
 *.dylib
+*.pyc
 install_manifest.txt
 
 uci
 uci_config.h
 tests/shunit2/save
+tests/cram/*.t.err
+.venv
