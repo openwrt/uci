@@ -11,6 +11,8 @@ UCI_BIN=${UCI_BIN:-"../uci"}
 	echo "uci is not present." >&2
 	return 1
 }
+VALGRIND="valgrind --quiet --show-leak-kinds=all --leak-check=full --track-origins=yes"
+UCI_BIN="${VALGRIND} ${UCI_BIN}"
 UCI="${UCI_BIN} -c ${CONFIG_DIR} -p ${CHANGES_DIR}"
 UCI_Q="${UCI_BIN} -c ${CONFIG_DIR} -p ${CHANGES_DIR} -q"
 
