@@ -113,8 +113,16 @@ uci_lookup_section_ref(struct uci_section *s)
 		maxlen = strlen(s->type) + 1 + 2 + 10;
 		if (!typestr) {
 			typestr = malloc(maxlen);
+			if (!typestr)
+				return NULL;
 		} else {
-			typestr = realloc(typestr, maxlen);
+			void *p = realloc(typestr, maxlen);
+			if (!p) {
+				free(typestr);
+				return NULL;
+			}
+
+			typestr = p;
 		}
 
 		if (typestr)
