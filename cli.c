@@ -571,7 +571,7 @@ static int uci_batch_cmd(void)
 			return 1;
 		}
 		argv[i] = NULL;
-		if ((ret = uci_parse_argument(ctx, input, &str, &argv[i])) != UCI_OK) {
+		if (uci_parse_argument(ctx, input, &str, &argv[i]) != UCI_OK) {
 			cli_perror();
 			i = 0;
 			break;
