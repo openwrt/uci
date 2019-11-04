@@ -490,16 +490,21 @@ ucimap_add_section_list(struct uci_map *map, struct ucimap_section_data *sd)
 	map->sdata_tail = &sd->next;
 }
 
-static void
+static int
 ucimap_add_section(struct ucimap_section_data *sd)
 {
+	int r;
 	struct uci_map *map = sd->map;
 
 	sd->next = NULL;
-	if (sd->sm->add(map, ucimap_section_ptr(sd)) < 0)
+	r = sd->sm->add(map, ucimap_section_ptr(sd));
+	if (r < 0) {
 		ucimap_free_section(map, sd);
-	else
+		return r;
+	} else
 		ucimap_add_section_list(map, sd);
+
+	return 0;
 }
 
 #ifdef UCI_DEBUG
@@ -702,7 +707,9 @@ ucimap_parse_section(struct uci_map *map, struct uci_sectionmap *sm, struct ucim
 		goto error;
 
 	if (map->parsed) {
-		ucimap_add_section(sd);
+		err = ucimap_add_section(sd);
+		if (err)
+			return err;
 	} else {
 		ucimap_add_section_list(map, sd);
 	}
