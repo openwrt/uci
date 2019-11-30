@@ -83,7 +83,7 @@ static uint32_t hash_murmur2(uint32_t h, const void * key, int len)
 		/* fall through */
 	case 1: h ^= data[0];
 	        h *= m;
-	};
+	}
 
 	h ^= h >> 13;
 	h *= m;

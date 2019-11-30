@@ -215,7 +215,7 @@ struct uci_backend _var = {		\
 		ctx->err = __val;	\
 		memcpy(ctx->trap, __old_trap, sizeof(ctx->trap)); \
 		goto handler;		\
-	}
+	} while(0)
 #define UCI_TRAP_RESTORE(ctx)		\
 	memcpy(ctx->trap, __old_trap, sizeof(ctx->trap)); \
 } while(0)
