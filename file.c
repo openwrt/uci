@@ -471,9 +471,9 @@ static void uci_parse_option(struct uci_context *ctx, bool list)
 
 	ofs_name = next_arg(ctx, true, true, false);
 	ofs_value = next_arg(ctx, false, false, false);
+	assert_eol(ctx);
 	name = pctx_str(pctx, ofs_name);
 	value = pctx_str(pctx, ofs_value);
-	assert_eol(ctx);
 
 	uci_fill_ptr(ctx, &ptr, &pctx->section->e);
 	e = uci_lookup_list(&pctx->section->options, name);
