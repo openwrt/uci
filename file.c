@@ -425,9 +425,9 @@ static void uci_parse_config(struct uci_context *ctx)
 		uci_parse_error(ctx, "invalid character in type field");
 
 	ofs_name = next_arg(ctx, false, true, false);
+	assert_eol(ctx);
 	type = pctx_str(pctx, ofs_type);
 	name = pctx_str(pctx, ofs_name);
-	assert_eol(ctx);
 
 	if (!name || !name[0]) {
 		ctx->internal = !pctx->merge;
