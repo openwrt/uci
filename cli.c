@@ -185,6 +185,7 @@ static void cli_perror(void)
 	uci_perror(ctx, appname);
 }
 
+__attribute__((format(printf, 1, 2)))
 static void cli_error(const char *fmt, ...)
 {
 	va_list ap;
