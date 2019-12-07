@@ -3,8 +3,15 @@ cmake_minimum_required(VERSION 2.6)
 PROJECT(uci C)
 
 SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
-ADD_DEFINITIONS(-Os -Wall -Werror -Wextra --std=gnu99 -g3 -I. -DUCI_PREFIX="${CMAKE_INSTALL_PREFIX}")
-ADD_DEFINITIONS(-Wno-unused-parameter)
+
+ADD_DEFINITIONS(-Wall -Werror)
+IF(CMAKE_C_COMPILER_VERSION VERSION_GREATER 6)
+	ADD_DEFINITIONS(-Wextra -Werror=implicit-function-declaration)
+	ADD_DEFINITIONS(-Wformat -Werror=format-security -Werror=format-nonliteral)
+ENDIF()
+ADD_DEFINITIONS(-Os -std=gnu99 -g3 -Wmissing-declarations -Wno-unused-parameter)
+ADD_DEFINITIONS(-DUCI_PREFIX="${CMAKE_INSTALL_PREFIX}")
+
 
 OPTION(UCI_DEBUG "debugging support" OFF)
 OPTION(UCI_DEBUG_TYPECAST "typecast debugging support" OFF)
