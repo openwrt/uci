@@ -140,50 +140,37 @@ uci_perror(struct uci_context *ctx, const char *str)
 void
 uci_get_errorstr(struct uci_context *ctx, char **dest, const char *prefix)
 {
-	static char error_info[128];
+	static char error_info[128] = { 0 };
 	int err;
-	const char *format =
-		"%s%s" /* prefix */
-		"%s%s" /* function */
-		"%s" /* error */
-		"%s"; /* details */
 
-	error_info[0] = 0;
-
-	if (!ctx)
-		err = UCI_ERR_INVAL;
-	else
-		err = ctx->err;
-
+	err = ctx ? ctx->err : UCI_ERR_INVAL;
 	if ((err < 0) || (err >= UCI_ERR_LAST))
 		err = UCI_ERR_UNKNOWN;
 
-	switch (err) {
-	case UCI_ERR_PARSE:
-		if (ctx->pctx) {
-			snprintf(error_info, sizeof(error_info) - 1, " (%s) at line %d, byte %d", (ctx->pctx->reason ? ctx->pctx->reason : "unknown"), ctx->pctx->line, ctx->pctx->byte);
-			break;
-		}
-		break;
-	default:
-		break;
+	if (ctx && ctx->pctx && (err == UCI_ERR_PARSE)) {
+		snprintf(error_info, sizeof(error_info) - 1, " (%s) at line %d, byte %d",
+			 (ctx->pctx->reason ? ctx->pctx->reason : "unknown"),
+			 ctx->pctx->line, ctx->pctx->byte);
 	}
-	if (dest) {
-		err = asprintf(dest, format,
-			(prefix ? prefix : ""), (prefix ? ": " : ""),
-			(ctx && ctx->func ? ctx->func : ""), (ctx && ctx->func ? ": " : ""),
-			uci_errstr[err],
-			error_info);
-		if (err < 0)
-			*dest = NULL;
-	} else {
+
+	if (!dest) {
 		strcat(error_info, "\n");
-		fprintf(stderr, format,
+		fprintf(stderr, "%s%s%s%s%s%s",
 			(prefix ? prefix : ""), (prefix ? ": " : ""),
 			(ctx && ctx->func ? ctx->func : ""), (ctx && ctx->func ? ": " : ""),
 			uci_errstr[err],
 			error_info);
+		return;
 	}
+
+	err = asprintf(dest, "%s%s%s%s%s%s",
+		(prefix ? prefix : ""), (prefix ? ": " : ""),
+		(ctx && ctx->func ? ctx->func : ""), (ctx && ctx->func ? ": " : ""),
+		uci_errstr[err],
+		error_info);
+
+	if (err < 0)
+		*dest = NULL;
 }
 
 int uci_list_configs(struct uci_context *ctx, char ***list)
