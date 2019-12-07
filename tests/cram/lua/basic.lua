@@ -42,3 +42,5 @@ local t = c:get("network", "lan", "dns")
 A(#t == 2)
 A(t[1] == "ns1.king.banik.cz")
 A(t[2] == "ns2.openwrt.org")
+
+print(c:get_all("broken"))

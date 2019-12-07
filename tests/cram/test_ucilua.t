@@ -56,3 +56,4 @@ run basic Lua tests:
   proto: dhcp
   .anonymous: false
   aliases: c d
+  nil\tuci: Parse error (EOF with unterminated ') at line 1, byte 18 (esc)
