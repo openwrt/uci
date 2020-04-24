@@ -724,6 +724,7 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 	char *volatile name = NULL;
 	char *volatile path = NULL;
 	char *filename = NULL;
+	struct stat statbuf;
 	volatile bool do_rename = false;
 	int fd;
 
@@ -801,7 +802,7 @@ done:
 	uci_close_stream(f1);
 	if (do_rename) {
 		path = realpath(p->path, NULL);
-		if (!path || rename(filename, path)) {
+		if (!path || stat(path, &statbuf) || chmod(filename, statbuf.st_mode) || rename(filename, path)) {
 			unlink(filename);
 			UCI_THROW(ctx, UCI_ERR_IO);
 		}
