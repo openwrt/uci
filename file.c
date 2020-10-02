@@ -388,8 +388,8 @@ static void uci_parse_package(struct uci_context *ctx, bool single)
 	pctx->pos += strlen(pctx_cur_str(pctx)) + 1;
 
 	ofs_name = next_arg(ctx, true, true, true);
-	name = pctx_str(pctx, ofs_name);
 	assert_eol(ctx);
+	name = pctx_str(pctx, ofs_name);
 	if (single)
 		return;
 
