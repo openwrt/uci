@@ -34,6 +34,7 @@ extern "C" {
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #define UCI_CONFDIR "/etc/config"
 #define UCI_SAVEDIR "/tmp/.uci"
@@ -508,11 +509,6 @@ struct uci_parse_option {
 	enum uci_option_type type;
 };
 
-
-/* linked list handling */
-#ifndef offsetof
-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
-#endif
 
 /**
  * container_of - cast a member of a structure out to the containing structure
