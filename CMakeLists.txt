@@ -56,6 +56,21 @@ ENDIF()
 IF(UNIT_TESTING)
   ENABLE_TESTING()
   ADD_SUBDIRECTORY(tests)
+
+  IF(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    ADD_LIBRARY(uci-san SHARED ${LIB_SOURCES})
+    SET_TARGET_PROPERTIES(uci-san PROPERTIES OUTPUT_NAME uci-san)
+    TARGET_COMPILE_OPTIONS(uci-san PRIVATE -g -fno-omit-frame-pointer -fsanitize=undefined,address,leak -fno-sanitize-recover=all)
+    TARGET_LINK_OPTIONS(uci-san PRIVATE -fsanitize=undefined,address,leak)
+    TARGET_LINK_LIBRARIES(uci-san ${ubox})
+
+    ADD_EXECUTABLE(cli-san cli.c)
+    SET_TARGET_PROPERTIES(cli-san PROPERTIES OUTPUT_NAME uci-san)
+    TARGET_COMPILE_OPTIONS(cli-san PRIVATE -g -fno-omit-frame-pointer -fsanitize=undefined,address,leak -fno-sanitize-recover=all)
+    TARGET_LINK_OPTIONS(cli-san PRIVATE -fsanitize=undefined,address,leak)
+    TARGET_LINK_LIBRARIES(cli-san uci-san ${ubox})
+  ENDIF()
+
 ENDIF()
 
 INSTALL(FILES uci.h uci_config.h uci_blob.h ucimap.h
