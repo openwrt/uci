@@ -33,6 +33,10 @@
 #include "uci.h"
 #include "uci_internal.h"
 
+#ifndef MAX_PATH
+#define MAX_PATH 4096
+#endif
+
 #define LINEBUF	32
 
 /*
@@ -723,7 +727,7 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 	FILE *f1, *f2 = NULL;
 	char *volatile name = NULL;
 	char *volatile path = NULL;
-	char *filename = NULL;
+	char filename[MAX_PATH] = {0};
 	struct stat statbuf;
 	volatile bool do_rename = false;
 	int fd;
@@ -735,7 +739,7 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 			UCI_THROW(ctx, UCI_ERR_INVAL);
 	}
 
-	if ((asprintf(&filename, "%s/.%s.uci-XXXXXX", ctx->confdir, p->e.name) < 0) || !filename)
+	if (snprintf(filename, MAX_PATH, "%s/.%s.uci-XXXXXX", ctx->confdir, p->e.name) < 0)
 		UCI_THROW(ctx, UCI_ERR_MEM);
 
 	/* open the config file for writing now, so that it is locked */
@@ -808,7 +812,6 @@ done:
 		}
 		free(path);
 	}
-	free(filename);
 	if (ctx->err)
 		UCI_THROW(ctx, ctx->err);
 }
