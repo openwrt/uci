@@ -148,7 +148,7 @@ uci_get_errorstr(struct uci_context *ctx, char **dest, const char *prefix)
 		err = UCI_ERR_UNKNOWN;
 
 	if (ctx && ctx->pctx && (err == UCI_ERR_PARSE)) {
-		snprintf(error_info, sizeof(error_info) - 1, " (%s) at line %d, byte %d",
+		snprintf(error_info, sizeof(error_info) - 1, " (%s) at line %d, byte %zu",
 			 (ctx->pctx->reason ? ctx->pctx->reason : "unknown"),
 			 ctx->pctx->line, ctx->pctx->byte);
 	}

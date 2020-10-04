@@ -38,11 +38,11 @@
 /*
  * Fetch a new line from the input stream and resize buffer if necessary
  */
-__private void uci_getln(struct uci_context *ctx, int offset)
+__private void uci_getln(struct uci_context *ctx, size_t offset)
 {
 	struct uci_parse_context *pctx = ctx->pctx;
 	char *p;
-	int ofs;
+	size_t ofs;
 
 	if (pctx->buf == NULL) {
 		pctx->buf = uci_malloc(ctx, LINEBUF);
@@ -112,7 +112,7 @@ static void skip_whitespace(struct uci_context *ctx)
 		pctx->pos += 1;
 }
 
-static inline void addc(struct uci_context *ctx, int *pos_dest, int *pos_src)
+static inline void addc(struct uci_context *ctx, size_t *pos_dest, size_t *pos_src)
 {
 	struct uci_parse_context *pctx = ctx->pctx;
 
@@ -124,7 +124,7 @@ static inline void addc(struct uci_context *ctx, int *pos_dest, int *pos_src)
 /*
  * parse a double quoted string argument from the command line
  */
-static void parse_double_quote(struct uci_context *ctx, int *target)
+static void parse_double_quote(struct uci_context *ctx, size_t *target)
 {
 	struct uci_parse_context *pctx = ctx->pctx;
 	char c;
@@ -159,7 +159,7 @@ static void parse_double_quote(struct uci_context *ctx, int *target)
 /*
  * parse a single quoted string argument from the command line
  */
-static void parse_single_quote(struct uci_context *ctx, int *target)
+static void parse_single_quote(struct uci_context *ctx, size_t *target)
 {
 	struct uci_parse_context *pctx = ctx->pctx;
 	char c;
@@ -188,7 +188,7 @@ static void parse_single_quote(struct uci_context *ctx, int *target)
 /*
  * parse a string from the command line and detect the quoting style
  */
-static void parse_str(struct uci_context *ctx, int *target)
+static void parse_str(struct uci_context *ctx, size_t *target)
 {
 	struct uci_parse_context *pctx = ctx->pctx;
 	bool next = true;
@@ -237,7 +237,7 @@ done:
 static int next_arg(struct uci_context *ctx, bool required, bool name, bool package)
 {
 	struct uci_parse_context *pctx = ctx->pctx;
-	int val, ptr;
+	size_t val, ptr;
 
 	skip_whitespace(ctx);
 	val = ptr = pctx_pos(pctx);

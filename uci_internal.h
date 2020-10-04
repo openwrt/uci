@@ -23,7 +23,7 @@ struct uci_parse_context
 	/* error context */
 	const char *reason;
 	int line;
-	int byte;
+	size_t byte;
 
 	/* private: */
 	struct uci_package *package;
@@ -32,8 +32,8 @@ struct uci_parse_context
 	FILE *file;
 	const char *name;
 	char *buf;
-	int bufsz;
-	int pos;
+	size_t bufsz;
+	size_t pos;
 };
 #define pctx_pos(pctx)		((pctx)->pos)
 #define pctx_str(pctx, i)	(&(pctx)->buf[(i)])
@@ -54,7 +54,7 @@ __private struct uci_package *uci_alloc_package(struct uci_context *ctx, const c
 
 __private FILE *uci_open_stream(struct uci_context *ctx, const char *filename, const char *origfilename, int pos, bool write, bool create);
 __private void uci_close_stream(FILE *stream);
-__private void uci_getln(struct uci_context *ctx, int offset);
+__private void uci_getln(struct uci_context *ctx, size_t offset);
 
 __private void uci_parse_error(struct uci_context *ctx, char *reason);
 __private void uci_alloc_parse_context(struct uci_context *ctx);
