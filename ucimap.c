@@ -661,11 +661,10 @@ ucimap_parse_section(struct uci_map *map, struct uci_sectionmap *sm, struct ucim
 			size = sizeof(struct ucimap_list) +
 				n_elements * sizeof(union ucimap_data);
 
-			data->list = malloc(size);
+			data->list = calloc(1, size);
 			if (!data->list)
 				goto error_mem;
 
-			memset(data->list, 0, size);
 			data->list->size = n_elements;
 		} else {
 			ucimap_count_alloc(om, &n_alloc, &n_alloc_custom);
@@ -897,10 +896,9 @@ ucimap_parse(struct uci_map *map, struct uci_package *pkg)
 					continue;
 				memset(sd, 0, sizeof(struct ucimap_section_data));
 			} else {
-				sd = malloc(sm->alloc_len);
+				sd = calloc(1, sm->alloc_len);
 				if (!sd)
 					continue;
-				memset(sd, 0, sm->alloc_len);
 				sd = ucimap_ptr_section(sm, sd);
 			}
 

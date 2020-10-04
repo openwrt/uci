@@ -48,11 +48,10 @@ struct uci_context *uci_alloc_context(void)
 {
 	struct uci_context *ctx;
 
-	ctx = (struct uci_context *) malloc(sizeof(struct uci_context));
+	ctx = (struct uci_context *) calloc(1, sizeof(struct uci_context));
 	if (!ctx)
 		return NULL;
 
-	memset(ctx, 0, sizeof(struct uci_context));
 	uci_list_init(&ctx->root);
 	uci_list_init(&ctx->delta_path);
 	uci_list_init(&ctx->backends);

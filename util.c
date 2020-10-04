@@ -36,10 +36,9 @@ __private void *uci_malloc(struct uci_context *ctx, size_t size)
 {
 	void *ptr;
 
-	ptr = malloc(size);
+	ptr = calloc(1, size);
 	if (!ptr)
 		UCI_THROW(ctx, UCI_ERR_MEM);
-	memset(ptr, 0, size);
 
 	return ptr;
 }

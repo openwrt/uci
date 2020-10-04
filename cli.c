@@ -100,10 +100,9 @@ uci_lookup_section_ref(struct uci_section *s)
 		ti = ti->next;
 	}
 	if (!ti) {
-		ti = malloc(sizeof(struct uci_type_list));
+		ti = calloc(1, sizeof(struct uci_type_list));
 		if (!ti)
 			return NULL;
-		memset(ti, 0, sizeof(struct uci_type_list));
 		ti->next = type_list;
 		type_list = ti;
 		ti->name = s->type;
