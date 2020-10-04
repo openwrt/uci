@@ -64,6 +64,7 @@ __private void uci_getln(struct uci_context *ctx, size_t offset)
 			return;
 
 		ofs += strlen(p);
+		pctx->buf_filled = ofs;
 		if (pctx->buf[ofs - 1] == '\n') {
 			pctx->line++;
 			return;
@@ -119,6 +120,15 @@ static inline void addc(struct uci_context *ctx, size_t *pos_dest, size_t *pos_s
 	pctx_char(pctx, *pos_dest) = pctx_char(pctx, *pos_src);
 	*pos_dest += 1;
 	*pos_src += 1;
+}
+
+static int uci_increase_pos(struct uci_parse_context *pctx, size_t add)
+{
+	if (pctx->pos + add > pctx->buf_filled)
+		return -EINVAL;
+
+	pctx->pos += add;
+	return 0;
 }
 
 /*
@@ -385,7 +395,8 @@ static void uci_parse_package(struct uci_context *ctx, bool single)
 	char *name;
 
 	/* command string null-terminated by strtok */
-	pctx->pos += strlen(pctx_cur_str(pctx)) + 1;
+	if (uci_increase_pos(pctx, strlen(pctx_cur_str(pctx)) + 1))
+		uci_parse_error(ctx, "package without name");
 
 	ofs_name = next_arg(ctx, true, true, true);
 	assert_eol(ctx);
@@ -417,7 +428,8 @@ static void uci_parse_config(struct uci_context *ctx)
 	}
 
 	/* command string null-terminated by strtok */
-	pctx->pos += strlen(pctx_cur_str(pctx)) + 1;
+	if (uci_increase_pos(pctx, strlen(pctx_cur_str(pctx)) + 1))
+		uci_parse_error(ctx, "config without name");
 
 	ofs_type = next_arg(ctx, true, false, false);
 	type = pctx_str(pctx, ofs_type);
@@ -467,7 +479,8 @@ static void uci_parse_option(struct uci_context *ctx, bool list)
 		uci_parse_error(ctx, "option/list command found before the first section");
 
 	/* command string null-terminated by strtok */
-	pctx->pos += strlen(pctx_cur_str(pctx)) + 1;
+	if (uci_increase_pos(pctx, strlen(pctx_cur_str(pctx)) + 1))
+		uci_parse_error(ctx, "option without name");
 
 	ofs_name = next_arg(ctx, true, true, false);
 	ofs_value = next_arg(ctx, false, false, false);

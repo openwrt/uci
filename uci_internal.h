@@ -33,6 +33,7 @@ struct uci_parse_context
 	const char *name;
 	char *buf;
 	size_t bufsz;
+	size_t buf_filled;
 	size_t pos;
 };
 #define pctx_pos(pctx)		((pctx)->pos)
