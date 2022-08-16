@@ -293,7 +293,7 @@ error:
 }
 
 /* returns the number of changes that were successfully parsed */
-static int uci_load_delta_file(struct uci_context *ctx, struct uci_package *p, char *filename, FILE **f, bool flush)
+static int uci_load_delta_file(struct uci_context *ctx, struct uci_package *p, char *filename, FILE *volatile *f, bool flush)
 {
 	FILE *volatile stream = NULL;
 	volatile int changes = 0;
@@ -334,9 +334,7 @@ __private int uci_load_delta(struct uci_context *ctx, struct uci_package *p, boo
 
 	if ((asprintf(&filename, "%s/%s", ctx->savedir, p->e.name) < 0) || !filename)
 		UCI_THROW(ctx, UCI_ERR_MEM);
-	UCI_TRAP_SAVE(ctx, done);
-	f = uci_open_stream(ctx, filename, NULL, SEEK_SET, flush, false);
-	UCI_TRAP_RESTORE(ctx);
+	uci_load_delta_file(ctx, NULL, filename, &f, flush);
 
 	if (flush && f && (changes > 0)) {
 		if (ftruncate(fileno(f), 0) < 0) {
@@ -346,7 +344,6 @@ __private int uci_load_delta(struct uci_context *ctx, struct uci_package *p, boo
 		}
 	}
 
-done:
 	free(filename);
 	uci_close_stream(f);
 	ctx->err = 0;
