@@ -748,7 +748,6 @@ int main(int argc, char **argv)
 				uci_add_delta_path(ctx, optarg);
 				break;
 			case 'P':
-				uci_add_delta_path(ctx, ctx->savedir);
 				uci_set_savedir(ctx, optarg);
 				flags |= CLI_FLAG_NOCOMMIT;
 				break;
