@@ -76,7 +76,7 @@ uci_free_element(struct uci_element *e)
 }
 
 static struct uci_option *
-uci_alloc_option(struct uci_section *s, const char *name, const char *value)
+uci_alloc_option(struct uci_section *s, const char *name, const char *value, struct uci_list *after)
 {
 	struct uci_package *p = s->package;
 	struct uci_context *ctx = p->ctx;
@@ -87,7 +87,7 @@ uci_alloc_option(struct uci_section *s, const char *name, const char *value)
 	o->v.string = uci_dataptr(o);
 	o->section = s;
 	strcpy(o->v.string, value);
-	uci_list_add(&s->options, &o->e.list);
+	uci_list_insert(after ? after : s->options.prev, &o->e.list);
 
 	return o;
 }
@@ -719,7 +719,7 @@ int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 
 		return uci_delete(ctx, ptr);
 	} else if (!ptr->o && ptr->option) { /* new option */
-		ptr->o = uci_alloc_option(ptr->s, ptr->option, ptr->value);
+		ptr->o = uci_alloc_option(ptr->s, ptr->option, ptr->value, NULL);
 		ptr->last = &ptr->o->e;
 	} else if (!ptr->s && ptr->section) { /* new section */
 		ptr->s = uci_alloc_section(ptr->p, ptr->value, ptr->section);
@@ -731,7 +731,7 @@ int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 			!strcmp(ptr->o->v.string, ptr->value))
 			return 0;
 
-		ptr->o = uci_alloc_option(ptr->s, ptr->option, ptr->value);
+		ptr->o = uci_alloc_option(ptr->s, ptr->option, ptr->value, &old->e.list);
 		if (ptr->option == old->e.name)
 			ptr->option = ptr->o->e.name;
 		uci_free_option(old);
