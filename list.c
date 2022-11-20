@@ -115,7 +115,7 @@ uci_free_option(struct uci_option *o)
 }
 
 static struct uci_option *
-uci_alloc_list(struct uci_section *s, const char *name)
+uci_alloc_list(struct uci_section *s, const char *name, struct uci_list *after)
 {
 	struct uci_package *p = s->package;
 	struct uci_context *ctx = p->ctx;
@@ -125,7 +125,7 @@ uci_alloc_list(struct uci_section *s, const char *name)
 	o->type = UCI_TYPE_LIST;
 	o->section = s;
 	uci_list_init(&o->v.list);
-	uci_list_add(&s->options, &o->e.list);
+	uci_list_insert(after ? after : s->options.prev, &o->e.list);
 
 	return o;
 }
@@ -628,7 +628,7 @@ int uci_add_list(struct uci_context *ctx, struct uci_ptr *ptr)
 	if (!ptr->o) {
 		/* create new list */
 		UCI_TRAP_SAVE(ctx, error);
-		ptr->o = uci_alloc_list(ptr->s, ptr->option);
+		ptr->o = uci_alloc_list(ptr->s, ptr->option, NULL);
 		UCI_TRAP_RESTORE(ctx);
 		ptr->last = &ptr->o->e;
 	} else if (ptr->o->type == UCI_TYPE_STRING) {
@@ -636,7 +636,7 @@ int uci_add_list(struct uci_context *ctx, struct uci_ptr *ptr)
 		struct uci_option *old = ptr->o;
 		UCI_TRAP_SAVE(ctx, error);
 		e2 = uci_alloc_generic(ctx, UCI_TYPE_ITEM, old->v.string, sizeof(struct uci_option));
-		ptr->o = uci_alloc_list(ptr->s, ptr->option);
+		ptr->o = uci_alloc_list(ptr->s, ptr->option, &old->e.list);
 		UCI_TRAP_RESTORE(ctx);
 		uci_list_add(&ptr->o->v.list, &e2->list);
 
