@@ -725,17 +725,19 @@ int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 		ptr->s = uci_alloc_section(ptr->p, ptr->value, ptr->section);
 		ptr->last = &ptr->s->e;
 	} else if (ptr->o && ptr->option) { /* update option */
-		struct uci_option *old = ptr->o;
-
-		if ((ptr->o->type == UCI_TYPE_STRING) &&
-			!strcmp(ptr->o->v.string, ptr->value))
+		if (ptr->o->type == UCI_TYPE_STRING && !strcmp(ptr->o->v.string, ptr->value))
 			return 0;
 
-		ptr->o = uci_alloc_option(ptr->s, ptr->option, ptr->value, &old->e.list);
-		if (ptr->option == old->e.name)
-			ptr->option = ptr->o->e.name;
-		uci_free_option(old);
-		ptr->last = &ptr->o->e;
+		if (ptr->o->type == UCI_TYPE_STRING && strlen(ptr->o->v.string) == strlen(ptr->value)) {
+			strcpy(ptr->o->v.string, ptr->value);
+		} else {
+			struct uci_option *old = ptr->o;
+			ptr->o = uci_alloc_option(ptr->s, ptr->option, ptr->value, &old->e.list);
+			if (ptr->option == old->e.name)
+				ptr->option = ptr->o->e.name;
+			uci_free_option(old);
+			ptr->last = &ptr->o->e;
+		}
 	} else if (ptr->s && ptr->section) { /* update section */
 		char *s = uci_strdup(ctx, ptr->value);
 
