@@ -652,6 +652,8 @@ int uci_add_list(struct uci_context *ctx, struct uci_ptr *ptr)
 	ptr->o = uci_alloc_list(ptr->s, ptr->option);
 	if (prev) {
 		uci_add_element_list(ctx, ptr, true);
+		if (ptr->option == prev->e.name)
+			ptr->option = ptr->o->e.name;
 		uci_free_option(prev);
 		ptr->value = value2;
 	}
