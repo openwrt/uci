@@ -497,19 +497,6 @@ uci_expand_ptr(struct uci_context *ctx, struct uci_ptr *ptr, bool complete)
 		return NULL;
 }
 
-static void uci_add_element_list(struct uci_context *ctx, struct uci_ptr *ptr, bool internal)
-{
-	struct uci_element *e;
-	struct uci_package *p;
-
-	p = ptr->p;
-	if (!internal && p->has_delta)
-		uci_add_delta(ctx, &p->delta, UCI_CMD_LIST_ADD, ptr->section, ptr->option, ptr->value);
-
-	e = uci_alloc_generic(ctx, UCI_TYPE_ITEM, ptr->value, sizeof(struct uci_option));
-	uci_list_add(&ptr->o->v.list, &e->list);
-}
-
 int uci_rename(struct uci_context *ctx, struct uci_ptr *ptr)
 {
 	/* NB: UCI_INTERNAL use means without delta tracking */
@@ -623,8 +610,7 @@ int uci_add_list(struct uci_context *ctx, struct uci_ptr *ptr)
 {
 	/* NB: UCI_INTERNAL use means without delta tracking */
 	bool internal = ctx && ctx->internal;
-	struct uci_option *volatile prev = NULL;
-	const char *volatile value2 = NULL;
+	struct uci_element *volatile e1 = NULL, *volatile e2 = NULL;
 
 	UCI_HANDLE_ERR(ctx);
 
@@ -632,34 +618,48 @@ int uci_add_list(struct uci_context *ctx, struct uci_ptr *ptr)
 	UCI_ASSERT(ctx, ptr->s);
 	UCI_ASSERT(ctx, ptr->value);
 
-	if (ptr->o) {
-		switch (ptr->o->type) {
-		case UCI_TYPE_STRING:
-			/* we already have a string value, convert that to a list */
-			prev = ptr->o;
-			value2 = ptr->value;
-			ptr->value = ptr->o->v.string;
-			break;
-		case UCI_TYPE_LIST:
-			uci_add_element_list(ctx, ptr, internal);
-			return 0;
-		default:
-			UCI_THROW(ctx, UCI_ERR_INVAL);
-			break;
-		}
+	if (ptr->o && ptr->o->type != UCI_TYPE_LIST && ptr->o->type != UCI_TYPE_STRING) {
+		UCI_THROW(ctx, UCI_ERR_INVAL);
 	}
 
-	ptr->o = uci_alloc_list(ptr->s, ptr->option);
-	if (prev) {
-		uci_add_element_list(ctx, ptr, true);
-		if (ptr->option == prev->e.name)
+	/* create new item */
+	e1 = uci_alloc_generic(ctx, UCI_TYPE_ITEM, ptr->value, sizeof(struct uci_option));
+
+	if (!ptr->o) {
+		/* create new list */
+		UCI_TRAP_SAVE(ctx, error);
+		ptr->o = uci_alloc_list(ptr->s, ptr->option);
+		UCI_TRAP_RESTORE(ctx);
+		ptr->last = &ptr->o->e;
+	} else if (ptr->o->type == UCI_TYPE_STRING) {
+		/* create new list and add old string value as item to list */
+		struct uci_option *old = ptr->o;
+		UCI_TRAP_SAVE(ctx, error);
+		e2 = uci_alloc_generic(ctx, UCI_TYPE_ITEM, old->v.string, sizeof(struct uci_option));
+		ptr->o = uci_alloc_list(ptr->s, ptr->option);
+		UCI_TRAP_RESTORE(ctx);
+		uci_list_add(&ptr->o->v.list, &e2->list);
+
+		/* remove old option */
+		if (ptr->option == old->e.name)
 			ptr->option = ptr->o->e.name;
-		uci_free_option(prev);
-		ptr->value = value2;
+		uci_free_option(old);
+		ptr->last = &ptr->o->e;
 	}
-	uci_add_element_list(ctx, ptr, internal);
+
+	/* add new item to list */
+	uci_list_add(&ptr->o->v.list, &e1->list);
+
+	if (!internal && ptr->p->has_delta)
+		uci_add_delta(ctx, &ptr->p->delta, UCI_CMD_LIST_ADD, ptr->section, ptr->option, ptr->value);
 
 	return 0;
+error:
+	if (e1 != NULL)
+		uci_free_element(e1);
+	if (e2 != NULL)
+		uci_free_element(e2);
+	UCI_THROW(ctx, ctx->err);
 }
 
 int uci_del_list(struct uci_context *ctx, struct uci_ptr *ptr)
