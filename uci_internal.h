@@ -42,6 +42,9 @@ struct uci_parse_context
 #define pctx_char(pctx, i)	((pctx)->buf[(i)])
 #define pctx_cur_char(pctx)	pctx_char(pctx, pctx_pos(pctx))
 
+#define uci_alloc_element(ctx, type, name, datasize) \
+	uci_to_ ## type (uci_alloc_generic(ctx, uci_type_ ## type, name, sizeof(struct uci_ ## type) + datasize))
+
 extern const char *uci_confdir;
 extern const char *uci_savedir;
 

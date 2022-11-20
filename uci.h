@@ -613,16 +613,6 @@ BUILD_CAST(option)
 #define uci_to_option(ptr)  container_of(ptr, struct uci_option, e)
 #endif
 
-/**
- * uci_alloc_element: allocate a generic uci_element, reserve a buffer and typecast
- * @ctx: uci context
- * @type: {package,section,option}
- * @name: string containing the name of the element
- * @datasize: additional buffer size to reserve at the end of the struct
- */
-#define uci_alloc_element(ctx, type, name, datasize) \
-	uci_to_ ## type (uci_alloc_generic(ctx, uci_type_ ## type, name, sizeof(struct uci_ ## type) + datasize))
-
 #define uci_dataptr(ptr) \
 	(((char *) ptr) + sizeof(*ptr))
 
