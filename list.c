@@ -727,14 +727,21 @@ int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 			ptr->last = &ptr->o->e;
 		}
 	} else if (ptr->s && ptr->section) { /* update section */
-		struct uci_section *old = ptr->s;
-		ptr->s = uci_alloc_section(ptr->p, ptr->value, old->e.name, &old->e.list);
-		uci_section_transfer_options(ptr->s, old);
-		if (ptr->section == old->e.name)
-			ptr->section = ptr->s->e.name;
-		uci_free_section(old);
-		ptr->s->package->n_section--;
-		ptr->last = &ptr->s->e;
+		if (!strcmp(ptr->s->type, ptr->value))
+			return 0;
+
+		if (strlen(ptr->s->type) == strlen(ptr->value)) {
+			strcpy(ptr->s->type, ptr->value);
+		} else {
+			struct uci_section *old = ptr->s;
+			ptr->s = uci_alloc_section(ptr->p, ptr->value, old->e.name, &old->e.list);
+			uci_section_transfer_options(ptr->s, old);
+			if (ptr->section == old->e.name)
+				ptr->section = ptr->s->e.name;
+			uci_free_section(old);
+			ptr->s->package->n_section--;
+			ptr->last = &ptr->s->e;
+		}
 	} else {
 		UCI_THROW(ctx, UCI_ERR_INVAL);
 	}

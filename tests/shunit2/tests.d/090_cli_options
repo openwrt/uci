@@ -11,8 +11,9 @@ test_add_delta() {
 	# save new changes in "$new_savedir"
 	mkdir -p "$new_savedir"
 	touch "$new_savedir/delta"
-	$UCI -P "$new_savedir" set delta.sec0=sectype
+	$UCI -P "$new_savedir" set delta.sec0=tmptype
 	$UCI -P "$new_savedir" add_list delta.sec0.li0=1
+	$UCI -P "$new_savedir" set delta.sec0=sectype
 
 	assertEquals "delta.sec0='sectype'
 delta.sec0.li0+='0'" "$($UCI changes)"
@@ -22,8 +23,9 @@ delta.sec0.li0+='0'" "$($UCI changes)"
 	assertTrue "$?"
 	assertEquals "delta.sec0='sectype'
 delta.sec0.li0+='0'
-delta.sec0='sectype'
-delta.sec0.li0+='1'" "$cmdoutput"
+delta.sec0='tmptype'
+delta.sec0.li0+='1'
+delta.sec0='sectype'" "$cmdoutput"
 
 	# check combined export.  Order matters here.
 	cmdoutput="$($UCI -P "$new_savedir" export)"
