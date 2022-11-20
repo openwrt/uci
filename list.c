@@ -30,12 +30,6 @@ static bool uci_list_set_pos(struct uci_list *head, struct uci_list *ptr, int po
 	return (old_head != new_head);
 }
 
-static inline void uci_list_fixup(struct uci_list *ptr)
-{
-	ptr->prev->next = ptr;
-	ptr->next->prev = ptr;
-}
-
 /*
  * uci_alloc_generic allocates a new uci_element with payload
  * payload is appended to the struct to save memory and reduce fragmentation
@@ -182,34 +176,26 @@ static void uci_fixup_section(struct uci_context *ctx, struct uci_section *s)
 	s->e.name = uci_strdup(ctx, buf);
 }
 
-/* fix up option list HEAD pointers and pointer to section in options */
-static void uci_section_fixup_options(struct uci_section *s, bool no_options)
+/* transfer options between two sections */
+static void uci_section_transfer_options(struct uci_section *dst, struct uci_section *src)
 {
 	struct uci_element *e;
 
-	if (no_options) {
-		/*
-		 * enforce empty list pointer state (s->next == s) when original
-		 * section had no options in the first place
-		 */
-		uci_list_init(&s->options);
-		return;
-	}
+	/* transfer the option list by inserting the new list HEAD and removing the old */
+	uci_list_insert(&src->options, &dst->options);
+	uci_list_del(&src->options);
 
-	/* fix pointers to HEAD at end/beginning of list */
-	uci_list_fixup(&s->options);
-
-	/* fix back pointer to section in options */
-	uci_foreach_element(&s->options, e) {
+	/* update pointer to section in options */
+	uci_foreach_element(&dst->options, e) {
 		struct uci_option *o;
 
 		o = uci_to_option(e);
-		o->section = s;
+		o->section = dst;
 	}
 }
 
 static struct uci_section *
-uci_alloc_section(struct uci_package *p, const char *type, const char *name)
+uci_alloc_section(struct uci_package *p, const char *type, const char *name, struct uci_list *after)
 {
 	struct uci_context *ctx = p->ctx;
 	struct uci_section *s;
@@ -226,7 +212,7 @@ uci_alloc_section(struct uci_package *p, const char *type, const char *name)
 		s->anonymous = true;
 	p->n_section++;
 
-	uci_list_add(&p->sections, &s->e.list);
+	uci_list_insert(after ? after : p->sections.prev, &s->e.list);
 
 	return s;
 }
@@ -551,7 +537,7 @@ int uci_add_section(struct uci_context *ctx, struct uci_package *p, const char *
 
 	UCI_HANDLE_ERR(ctx);
 	UCI_ASSERT(ctx, p != NULL);
-	s = uci_alloc_section(p, type, NULL);
+	s = uci_alloc_section(p, type, NULL, NULL);
 	if (s && s->anonymous)
 		uci_fixup_section(ctx, s);
 	*res = s;
@@ -724,7 +710,7 @@ int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 		ptr->o = uci_alloc_option(ptr->s, ptr->option, ptr->value, NULL);
 		ptr->last = &ptr->o->e;
 	} else if (!ptr->s && ptr->section) { /* new section */
-		ptr->s = uci_alloc_section(ptr->p, ptr->value, ptr->section);
+		ptr->s = uci_alloc_section(ptr->p, ptr->value, ptr->section, NULL);
 		ptr->last = &ptr->s->e;
 	} else if (ptr->o && ptr->option) { /* update option */
 		if (ptr->o->type == UCI_TYPE_STRING && !strcmp(ptr->o->v.string, ptr->value))
@@ -741,22 +727,14 @@ int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 			ptr->last = &ptr->o->e;
 		}
 	} else if (ptr->s && ptr->section) { /* update section */
-		char *s = uci_strdup(ctx, ptr->value);
-
-		if (ptr->s->type == uci_dataptr(ptr->s)) {
-			/* drop the in-section storage of type name */
-			bool no_options;
-
-			no_options = uci_list_empty(&ptr->s->options);
-			ptr->last = NULL;
-			ptr->last = uci_realloc(ctx, ptr->s, sizeof(struct uci_section));
-			ptr->s = uci_to_section(ptr->last);
-			uci_list_fixup(&ptr->s->e.list);
-			uci_section_fixup_options(ptr->s, no_options);
-		} else {
-			free(ptr->s->type);
-		}
-		ptr->s->type = s;
+		struct uci_section *old = ptr->s;
+		ptr->s = uci_alloc_section(ptr->p, ptr->value, old->e.name, &old->e.list);
+		uci_section_transfer_options(ptr->s, old);
+		if (ptr->section == old->e.name)
+			ptr->section = ptr->s->e.name;
+		uci_free_section(old);
+		ptr->s->package->n_section--;
+		ptr->last = &ptr->s->e;
 	} else {
 		UCI_THROW(ctx, UCI_ERR_INVAL);
 	}
