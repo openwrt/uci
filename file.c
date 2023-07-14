@@ -459,7 +459,7 @@ static void uci_parse_config(struct uci_context *ctx)
 
 		ctx->internal = !pctx->merge;
 		UCI_NESTED(uci_set, ctx, &ptr);
-		pctx->section = uci_to_section(ptr.last);
+		pctx->section = ptr.s;
 	}
 }
 
