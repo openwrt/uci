@@ -374,19 +374,16 @@ static int
 uci_lua_get_any(lua_State *L, bool all)
 {
 	struct uci_context *ctx;
-	struct uci_element *e = NULL;
 	struct uci_ptr ptr;
 	int offset = 0;
 	int nret = 1;
 	char *s = NULL;
-	int err = UCI_ERR_NOTFOUND;
 
 	ctx = find_context(L, &offset);
 
 	if (lookup_args(L, ctx, offset, &ptr, &s))
 		goto error;
 
-	lookup_ptr(ctx, &ptr, NULL, true);
 	if (!all && !ptr.s) {
 		ctx->err = UCI_ERR_INVAL;
 		goto error;
@@ -396,33 +393,24 @@ uci_lua_get_any(lua_State *L, bool all)
 		goto error;
 	}
 
-	err = UCI_OK;
-	e = ptr.last;
-	switch(e->type) {
-		case UCI_TYPE_PACKAGE:
-			uci_push_package(L, ptr.p);
-			break;
-		case UCI_TYPE_SECTION:
-			if (all) {
-				uci_push_section(L, ptr.s, -1);
-			}
-			else {
-				lua_pushstring(L, ptr.s->type);
-				lua_pushstring(L, ptr.s->e.name);
-				nret++;
-			}
-			break;
-		case UCI_TYPE_OPTION:
-			uci_push_option(L, ptr.o);
-			break;
-		default:
-			ctx->err = UCI_ERR_INVAL;
-			goto error;
+	if (ptr.o) {
+		uci_push_option(L, ptr.o);
+	} else if (ptr.s) {
+		if (all) {
+			uci_push_section(L, ptr.s, -1);
+		}
+		else {
+			lua_pushstring(L, ptr.s->type);
+			lua_pushstring(L, ptr.s->e.name);
+			nret++;
+		}
+	} else {
+		uci_push_package(L, ptr.p);
 	}
+
 	if (s)
 		free(s);
-	if (!err)
-		return nret;
+	return nret;
 
 error:
 	if (s)

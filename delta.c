@@ -213,7 +213,6 @@ error:
 
 static void uci_parse_delta_line(struct uci_context *ctx, struct uci_package *p)
 {
-	struct uci_element *e = NULL;
 	struct uci_ptr ptr;
 	int cmd;
 
@@ -244,11 +243,14 @@ static void uci_parse_delta_line(struct uci_context *ctx, struct uci_package *p)
 		UCI_INTERNAL(uci_del_list, ctx, &ptr);
 		break;
 	case UCI_CMD_ADD:
+		UCI_INTERNAL(uci_set, ctx, &ptr);
+		if (!ptr.option && ptr.s)
+			ptr.s->anonymous = true;
+		break;
 	case UCI_CMD_CHANGE:
 		UCI_INTERNAL(uci_set, ctx, &ptr);
-		e = ptr.last;
-		if (!ptr.option && e && (cmd == UCI_CMD_ADD))
-			uci_to_section(e)->anonymous = true;
+		break;
+	default:
 		break;
 	}
 	return;

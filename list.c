@@ -616,7 +616,6 @@ int uci_add_list(struct uci_context *ctx, struct uci_ptr *ptr)
 		UCI_TRAP_SAVE(ctx, error);
 		ptr->o = uci_alloc_list(ptr->s, ptr->option, NULL);
 		UCI_TRAP_RESTORE(ctx);
-		ptr->last = &ptr->o->e;
 	} else if (ptr->o->type == UCI_TYPE_STRING) {
 		/* create new list and add old string value as item to list */
 		struct uci_option *old = ptr->o;
@@ -630,7 +629,6 @@ int uci_add_list(struct uci_context *ctx, struct uci_ptr *ptr)
 		if (ptr->option == old->e.name)
 			ptr->option = ptr->o->e.name;
 		uci_free_option(old);
-		ptr->last = &ptr->o->e;
 	}
 
 	/* add new item to list */
@@ -708,10 +706,8 @@ int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 		return uci_delete(ctx, ptr);
 	} else if (!ptr->o && ptr->option) { /* new option */
 		ptr->o = uci_alloc_option(ptr->s, ptr->option, ptr->value, NULL);
-		ptr->last = &ptr->o->e;
 	} else if (!ptr->s && ptr->section) { /* new section */
 		ptr->s = uci_alloc_section(ptr->p, ptr->value, ptr->section, NULL);
-		ptr->last = &ptr->s->e;
 	} else if (ptr->o && ptr->option) { /* update option */
 		if (ptr->o->type == UCI_TYPE_STRING && !strcmp(ptr->o->v.string, ptr->value))
 			return 0;
@@ -724,7 +720,6 @@ int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 			if (ptr->option == old->e.name)
 				ptr->option = ptr->o->e.name;
 			uci_free_option(old);
-			ptr->last = &ptr->o->e;
 		}
 	} else if (ptr->s && ptr->section) { /* update section */
 		if (!strcmp(ptr->s->type, ptr->value))
@@ -740,7 +735,6 @@ int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 				ptr->section = ptr->s->e.name;
 			uci_free_section(old);
 			ptr->s->package->n_section--;
-			ptr->last = &ptr->s->e;
 		}
 	} else {
 		UCI_THROW(ctx, UCI_ERR_INVAL);

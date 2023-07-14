@@ -314,7 +314,6 @@ static void uci_show_changes(struct uci_package *p)
 
 static int package_cmd(int cmd, char *tuple)
 {
-	struct uci_element *e = NULL;
 	struct uci_ptr ptr;
 	int ret = 1;
 
@@ -323,7 +322,6 @@ static int package_cmd(int cmd, char *tuple)
 		return 1;
 	}
 
-	e = ptr.last;
 	switch(cmd) {
 	case CMD_CHANGES:
 		uci_show_changes(ptr.p);
@@ -349,20 +347,14 @@ static int package_cmd(int cmd, char *tuple)
 			cli_perror();
 			goto out;
 		}
-		switch(e->type) {
-			case UCI_TYPE_PACKAGE:
-				uci_show_package(ptr.p);
-				break;
-			case UCI_TYPE_SECTION:
-				uci_show_section(ptr.s);
-				break;
-			case UCI_TYPE_OPTION:
-				uci_show_option(ptr.o, true);
-				break;
-			default:
-				/* should not happen */
-				goto out;
-		}
+		if (ptr.o)
+			uci_show_option(ptr.o, true);
+		else if (ptr.s)
+			uci_show_section(ptr.s);
+		else if (ptr.p)
+			uci_show_package(ptr.p);
+		else
+			goto out; /* should not happen */
 		break;
 	}
 
@@ -475,7 +467,6 @@ done:
 
 static int uci_do_section_cmd(int cmd, int argc, char **argv)
 {
-	struct uci_element *e;
 	struct uci_ptr ptr;
 	int ret = UCI_OK;
 	int dummy;
@@ -493,7 +484,6 @@ static int uci_do_section_cmd(int cmd, int argc, char **argv)
 	    (cmd != CMD_RENAME) && (cmd != CMD_REORDER))
 		return 1;
 
-	e = ptr.last;
 	switch(cmd) {
 	case CMD_GET:
 		if (!(ptr.flags & UCI_LOOKUP_COMPLETE)) {
@@ -501,17 +491,10 @@ static int uci_do_section_cmd(int cmd, int argc, char **argv)
 			cli_perror();
 			return 1;
 		}
-		switch(e->type) {
-		case UCI_TYPE_SECTION:
-			printf("%s\n", ptr.s->type);
-			break;
-		case UCI_TYPE_OPTION:
+		if (ptr.o)
 			uci_show_value(ptr.o, false);
-			break;
-		default:
-			break;
-		}
-		/* throw the value to stdout */
+		else if (ptr.s)
+			printf("%s\n", ptr.s->type);
 		break;
 	case CMD_RENAME:
 		ret = uci_rename(ctx, &ptr);
