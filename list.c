@@ -228,6 +228,7 @@ uci_free_section(struct uci_section *s)
 	if ((s->type != uci_dataptr(s)) &&
 		(s->type != NULL))
 		free(s->type);
+	s->package->n_section--;
 	uci_free_element(&s->e);
 }
 
@@ -734,7 +735,6 @@ int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 			if (ptr->section == old->e.name)
 				ptr->section = ptr->s->e.name;
 			uci_free_section(old);
-			ptr->s->package->n_section--;
 		}
 	} else {
 		UCI_THROW(ctx, UCI_ERR_INVAL);
