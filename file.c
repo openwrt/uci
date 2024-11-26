@@ -832,6 +832,9 @@ done:
  * after the last '/' character. By checking for a non-'\0'
  * character afterwards, directories are ignored (glob marks
  * those with a trailing '/'
+ * Filename with '.' are ignored and not parsed. Uci doesn't
+ * permit config files with '.' in the name and cause parsing
+ * problems.
  */
 static inline char *get_filename(char *path)
 {
@@ -841,6 +844,10 @@ static inline char *get_filename(char *path)
 	p++;
 	if (!*p)
 		return NULL;
+
+	if (strrchr(p, '.'))
+		return NULL;
+
 	return p;
 }
 
