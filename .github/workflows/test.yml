@@ -1,0 +1,84 @@
+name: 'Run tests'
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build_test:
+    strategy:
+      matrix:
+        include:
+          - compiler: "-DCMAKE_C_COMPILER=clang"
+          - compiler: "-DCMAKE_C_COMPILER=gcc"
+
+    name: Build and run tests
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bookworm
+
+    steps:
+
+      - name: Add Debian experimental
+        run: |
+           echo "deb http://deb.debian.org/debian/ experimental main" >> /etc/apt/sources.list
+
+      - name: Install compiler
+        run: |
+          apt update
+          apt install -y cmake build-essential lua5.1 pkgconf libjson-c-dev liblua5.1-0-dev python3.11-venv clang libc++abi-dev libc++-dev
+          apt -t experimental install -y valgrind
+          useradd -ms /bin/bash buildbot
+
+      - name: Checkout libubox
+        uses: actions/checkout@v3
+        with:
+          repository: openwrt/libubox
+          path: libubox
+
+      - name: Checkout uci
+        uses: actions/checkout@v3
+        with:
+          path: uci
+
+      - name: Create build directory
+        run: mkdir libubox-build
+
+      - name: Create build directory
+        run: mkdir uci-build
+
+      - name: Create install directory
+        run: mkdir install
+
+      - name: Fix permission
+        run: chown -R buildbot:buildbot libubox-build libubox uci uci-build install
+
+      - name: Run cmake (libubox)
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: libubox-build
+        run: cmake ../libubox -DCMAKE_INSTALL_PREFIX=../install -DBUILD_LUA=false ${{ matrix.compiler }}
+
+      - name: Run build (libubox)
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: libubox-build
+        run: make
+
+      - name: Run install (libubox)
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: libubox-build
+        run: make install
+
+      - name: Run cmake (uci)
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: uci-build
+        run: cmake ../uci -DUNIT_TESTING=true -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_PREFIX_PATH=../install  ${{ matrix.compiler }}
+
+      - name: Run build (uci)
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: uci-build
+        run: make
+
+      - name: Run tests (uci)
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: uci-build
+        run: make test
