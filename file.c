@@ -719,13 +719,16 @@ error:
 }
 
 
-static char *uci_config_path(struct uci_context *ctx, const char *name)
+static char *uci_config_path(struct uci_context *ctx, const char *name, bool conf2)
 {
+	const char *confdir = conf2 ? ctx->conf2dir : ctx->confdir;
 	char *filename;
 
 	UCI_ASSERT(ctx, uci_validate_package(name));
-	filename = uci_malloc(ctx, strlen(name) + strlen(ctx->confdir) + 2);
-	sprintf(filename, "%s/%s", ctx->confdir, name);
+	if (!confdir)
+		return NULL;
+	filename = uci_malloc(ctx, strlen(name) + strlen(confdir) + 2);
+	sprintf(filename, "%s/%s", confdir, name);
 
 	return filename;
 }
@@ -739,18 +742,18 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 	char *filename = NULL;
 	struct stat statbuf;
 	volatile bool do_rename = false;
+	const char *confdir;
 	int fd, sz;
 
-	if (!p->path) {
-		if (overwrite)
-			p->path = uci_config_path(ctx, p->e.name);
-		else
-			UCI_THROW(ctx, UCI_ERR_INVAL);
-	}
+	if (!p->path && overwrite)
+		p->path = uci_config_path(ctx, p->e.name, p->uses_conf2);
+	if (!p->path)
+		UCI_THROW(ctx, UCI_ERR_INVAL);
 
-	sz = snprintf(NULL, 0, "%s/.%s.uci-XXXXXX", ctx->confdir, p->e.name);
+	confdir = p->uses_conf2 ? ctx->conf2dir : ctx->confdir;
+	sz = snprintf(NULL, 0, "%s/.%s.uci-XXXXXX", confdir, p->e.name);
 	filename = alloca(sz + 1);
-	snprintf(filename, sz + 1, "%s/.%s.uci-XXXXXX", ctx->confdir, p->e.name);
+	snprintf(filename, sz + 1, "%s/.%s.uci-XXXXXX", confdir, p->e.name);
 
 	/* open the config file for writing now, so that it is locked */
 	f1 = uci_open_stream(ctx, p->path, NULL, SEEK_SET, true, true);
@@ -910,6 +913,8 @@ static struct uci_package *uci_file_load(struct uci_context *ctx,
 	char *filename;
 	bool confdir;
 	FILE *volatile file = NULL;
+	struct stat st;
+	bool conf2;
 
 	switch (name[0]) {
 	case '.':
@@ -922,10 +927,17 @@ static struct uci_package *uci_file_load(struct uci_context *ctx,
 		filename = uci_strdup(ctx, name);
 		name = strrchr(name, '/') + 1;
 		confdir = false;
+		conf2 = false;
 		break;
 	default:
 		/* config in /etc/config */
-		filename = uci_config_path(ctx, name);
+		conf2 = true;
+		filename = uci_config_path(ctx, name, conf2);
+		if (!filename || stat(filename, &st) != 0) {
+			conf2 = false;
+			free(filename);
+			filename = uci_config_path(ctx, name, conf2);
+		}
 		confdir = true;
 		break;
 	}
@@ -937,6 +949,7 @@ static struct uci_package *uci_file_load(struct uci_context *ctx,
 	UCI_TRAP_RESTORE(ctx);
 
 	if (package) {
+		package->uses_conf2 = conf2;
 		package->path = filename;
 		package->has_delta = confdir;
 		uci_load_delta(ctx, package, false);

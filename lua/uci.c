@@ -907,6 +907,26 @@ uci_lua_set_confdir(lua_State *L)
 }
 
 static int
+uci_lua_get_conf2dir(lua_State *L)
+{
+	struct uci_context *ctx = find_context(L, NULL);
+	lua_pushstring(L, ctx->conf2dir ? ctx->conf2dir : "");
+	return 1;
+}
+
+static int
+uci_lua_set_conf2dir(lua_State *L)
+{
+	struct uci_context *ctx;
+	int offset = 0;
+
+	ctx = find_context(L, &offset);
+	luaL_checkstring(L, 1 + offset);
+	uci_set_conf2dir(ctx, lua_tostring(L, -1));
+	return uci_push_status(L, ctx, false);
+}
+
+static int
 uci_lua_get_savedir(lua_State *L)
 {
 	struct uci_context *ctx = find_context(L, NULL);
@@ -1029,6 +1049,8 @@ static const luaL_Reg uci[] = {
 	{ "add_delta", uci_lua_add_delta },
 	{ "get_confdir", uci_lua_get_confdir },
 	{ "set_confdir", uci_lua_set_confdir },
+	{ "get_conf2dir", uci_lua_get_conf2dir },
+	{ "set_conf2dir", uci_lua_set_conf2dir },
 	{ "get_savedir", uci_lua_get_savedir },
 	{ "set_savedir", uci_lua_set_savedir },
 	{ "list_configs", uci_lua_list_configs },

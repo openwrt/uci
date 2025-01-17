@@ -38,6 +38,7 @@ extern "C" {
 
 #define UCI_CONFDIR "/etc/config"
 #define UCI_SAVEDIR "/tmp/.uci"
+#define UCI_CONF2DIR "/var/run/uci"
 #define UCI_DIRMODE 0700
 #define UCI_FILEMODE 0600
 
@@ -266,6 +267,13 @@ extern int uci_set_savedir(struct uci_context *ctx, const char *dir);
 extern int uci_set_confdir(struct uci_context *ctx, const char *dir);
 
 /**
+ * uci_set_conf2dir: change the override config storage directory
+ * @ctx: uci context
+ * @dir: directory name (can be NULL to disable config override)
+ */
+extern int uci_set_conf2dir(struct uci_context *ctx, const char *dir);
+
+/**
  * uci_add_delta_path: add a directory to the search path for change delta files
  * @ctx: uci context
  * @dir: directory name
@@ -411,6 +419,7 @@ struct uci_context
 
 	char *confdir;
 	char *savedir;
+	char *conf2dir;
 
 	/* search path for delta files */
 	struct uci_list delta_path;
@@ -429,7 +438,7 @@ struct uci_package
 	struct uci_element e;
 	struct uci_list sections;
 	struct uci_context *ctx;
-	bool has_delta;
+	bool has_delta, uses_conf2;
 	char *path;
 
 	/* private: */

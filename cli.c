@@ -159,7 +159,8 @@ static void uci_usage(void)
 		"\treorder    <config>.<section>=<position>\n"
 		"\n"
 		"Options:\n"
-		"\t-c <path>  set the search path for config files (default: /etc/config)\n"
+		"\t-c <path>  set the search path for config files (default: "UCI_CONFDIR")\n"
+		"\t-C <path>  set the search path for config override files (default: "UCI_CONF2DIR")\n"
 		"\t-d <str>   set the delimiter for list values in uci show\n"
 		"\t-f <file>  use <file> as input instead of stdin\n"
 		"\t-m         when importing, merge data into an existing package\n"
@@ -690,10 +691,13 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	while((c = getopt(argc, argv, "c:d:f:LmnNp:P:qsSt:X")) != -1) {
+	while((c = getopt(argc, argv, "c:C:d:f:LmnNp:P:qsSt:X")) != -1) {
 		switch(c) {
 			case 'c':
 				uci_set_confdir(ctx, optarg);
+				break;
+			case 'C':
+				uci_set_conf2dir(ctx, optarg);
 				break;
 			case 'd':
 				delimiter = optarg;

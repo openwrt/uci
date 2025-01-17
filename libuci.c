@@ -41,6 +41,7 @@ static const char *uci_errstr[] = {
 #include "list.c"
 
 __private const char *uci_confdir = UCI_CONFDIR;
+__private const char *uci_conf2dir = UCI_CONF2DIR;
 __private const char *uci_savedir = UCI_SAVEDIR;
 
 /* exported functions */
@@ -58,6 +59,7 @@ struct uci_context *uci_alloc_context(void)
 	ctx->flags = UCI_FLAG_STRICT | UCI_FLAG_SAVED_DELTA;
 
 	ctx->confdir = (char *) uci_confdir;
+	ctx->conf2dir = (char *) uci_conf2dir;
 	ctx->savedir = (char *) uci_savedir;
 	uci_add_delta_path(ctx, uci_savedir);
 
@@ -90,6 +92,22 @@ void uci_free_context(struct uci_context *ctx)
 
 ignore:
 	return;
+}
+
+int uci_set_conf2dir(struct uci_context *ctx, const char *dir)
+{
+	char *cdir;
+
+	UCI_HANDLE_ERR(ctx);
+	if (dir && !dir[0])
+		dir = NULL;
+
+	cdir = dir ? uci_strdup(ctx, dir) : NULL;
+	if (ctx->conf2dir != uci_conf2dir)
+		free(ctx->conf2dir);
+	ctx->conf2dir = cdir;
+
+	return 0;
 }
 
 int uci_set_confdir(struct uci_context *ctx, const char *dir)
