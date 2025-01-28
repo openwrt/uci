@@ -98,11 +98,11 @@ int uci_set_conf2dir(struct uci_context *ctx, const char *dir)
 {
 	char *cdir;
 
-	UCI_HANDLE_ERR(ctx);
-	if (dir && !dir[0])
-		dir = NULL;
+	if (!dir || !dir[0])
+		cdir = NULL;
+	else if ((cdir = strdup(dir)) == NULL)
+		return UCI_ERR_MEM;
 
-	cdir = dir ? uci_strdup(ctx, dir) : NULL;
 	if (ctx->conf2dir != uci_conf2dir)
 		free(ctx->conf2dir);
 	ctx->conf2dir = cdir;
