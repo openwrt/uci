@@ -210,12 +210,10 @@ __uci_blob_check_equal(struct blob_attr *c1, struct blob_attr *c2,
 		return true;
 
 	tb1 = alloca(config->n_params * sizeof(struct blob_attr *));
-	blobmsg_parse(config->params, config->n_params, tb1,
-		blob_data(c1), blob_len(c1));
+	blobmsg_parse_attr(config->params, config->n_params, tb1, c1);
 
 	tb2 = alloca(config->n_params * sizeof(struct blob_attr *));
-	blobmsg_parse(config->params, config->n_params, tb2,
-		blob_data(c2), blob_len(c2));
+	blobmsg_parse_attr(config->params, config->n_params, tb2, c2);
 
 	return !uci_blob_diff(tb1, tb2, config, NULL);
 }
