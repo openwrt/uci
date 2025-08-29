@@ -160,6 +160,8 @@ uci_get_errorstr(struct uci_context *ctx, char **dest, const char *prefix)
 	static char error_info[128] = { 0 };
 	int err;
 
+	error_info[0] = '\0';
+
 	err = ctx ? ctx->err : UCI_ERR_INVAL;
 	if ((err < 0) || (err >= UCI_ERR_LAST))
 		err = UCI_ERR_UNKNOWN;
