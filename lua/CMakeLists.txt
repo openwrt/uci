@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.10)
-
 PROJECT(uci C)
 
 SET(CMAKE_INSTALL_PREFIX /)
