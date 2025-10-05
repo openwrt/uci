@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
-INCLUDE(GNUInstallDirs)
 
 PROJECT(uci C)
+INCLUDE(GNUInstallDirs)
 
 SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 
