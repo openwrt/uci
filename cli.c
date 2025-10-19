@@ -476,6 +476,9 @@ static int uci_do_section_cmd(int cmd, int argc, char **argv)
 		return 255;
 
 	if (uci_lookup_ptr(ctx, &ptr, argv[1], true) != UCI_OK) {
+		if (flags & CLI_FLAG_BATCH && cmd == CMD_GET)
+			printf("\n");
+
 		cli_perror();
 		return 1;
 	}
@@ -488,6 +491,9 @@ static int uci_do_section_cmd(int cmd, int argc, char **argv)
 	switch(cmd) {
 	case CMD_GET:
 		if (!(ptr.flags & UCI_LOOKUP_COMPLETE)) {
+			if (flags & CLI_FLAG_BATCH)
+				printf("\n");
+
 			ctx->err = UCI_ERR_NOTFOUND;
 			cli_perror();
 			return 1;
