@@ -16,13 +16,15 @@ check available methods:
   get_all
   foreach
   __gc
-  delete
   set_savedir
-  set
   revert
+  delete
+  reorder
+  set
+  get_conf2dir
   get_savedir
   changes
-  reorder
+  set_conf2dir
   get_confdir
   list_configs
   commit
