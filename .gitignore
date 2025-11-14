@@ -7,8 +7,8 @@ CMakeFiles
 *.so
 *.dylib
 *.pyc
+build
 install_manifest.txt
-
 uci
 uci_config.h
 tests/shunit2/save
