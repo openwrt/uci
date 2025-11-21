@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+export DEB_BUILD_MAINT_OPTIONS=hardening=+all
+
+%:
+	dh $@ --buildsystem=cmake
+
+DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+	  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+	  -DBUILD_EXAMPLES=OFF \
+	  -DCMAKE_INSTALL_PREFIX=/usr \
+	  -DABIVERSION:STRING=0.0 \
+	  -DBUILD_LUA=ON \
+	  -DBUILD_STATIC=OFF \
+	  -DLUAPATH=/usr/lib/$(DEB_HOST_MULTIARCH)/lua/5.1
+
+# Let dh_makeshlibs capture shlibs and apply the SONAME.
