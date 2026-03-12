@@ -34,9 +34,9 @@
 #define DPRINTF(...) do {} while (0)
 #endif
 
-#if !defined LUA_VERSION_NUM || LUA_VERSION_NUM==501
-
 int luaopen_uci(lua_State *L);
+
+#if !defined LUA_VERSION_NUM || LUA_VERSION_NUM==501
 
 /*
  * ** Adapted from Lua 5.2.0
