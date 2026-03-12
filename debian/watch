@@ -1,0 +1,5 @@
+version=4
+# Upstream mirrors to git.openwrt.org without formal releases; you can snapshot.
+# Example (replace when tags exist):
+# opts=filenamemangle=s/.+\/uci-(\d\S+)\.tar\.gz/uci-$1\.tar\.gz/ \
+#   https://git.openwrt.org/?p=project/uci.git;a=tags .*/v?(\d\S+

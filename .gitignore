@@ -14,3 +14,15 @@ uci_config.h
 tests/shunit2/save
 tests/cram/*.t.err
 .venv
+
+obj-*
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/*.debhelper.log
+debian/*.substvars
+debian/files
+debian/libuci-dev/
+debian/libuci-plugin-lua5.1/
+debian/libuci0/
+debian/changelog
+debian/tmp/

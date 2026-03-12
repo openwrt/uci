@@ -1,0 +1,45 @@
+Source: uci
+Section: libs
+Priority: optional
+Maintainer: Russ Dill <russ.dill@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               cmake,
+               ninja-build,
+               libubox-dev (>= 2021~) | libubox-dev,
+               liblua5.1-dev, lua5.1
+Standards-Version: 4.7.0
+Homepage: https://github.com/openwrt/uci
+Rules-Requires-Root: no
+
+Package: libuci0
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Unified Configuration Interface (runtime library)
+ UCI (Unified Configuration Interface) is OpenWrt’s configuration system.
+ This package provides the shared library (SONAME 0).
+
+Package: libuci-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends: libuci0 (= ${binary:Version}), ${misc:Depends}
+Description: Unified Configuration Interface (development files)
+ Headers and the development symlink for libuci.
+
+Package: uci
+Section: admin
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libuci0 (= ${binary:Version})
+Description: Unified Configuration Interface (command-line utility)
+ The uci CLI manipulates configuration stored in UCI format.
+
+Package: libuci-plugin-lua5.1
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}, libuci0 (= ${binary:Version})
+Description: Unified Configuration Interface (Lua module)
+ Lua 5.1 binding for libuci.
+
