@@ -76,5 +76,8 @@ TMP_DIR="${TMP_DIR}" \
 UCI="${UCI}" \
 UCI_Q="${UCI_Q}" \
 /bin/sh ${FULL_SUITE}
+EXITSTATUS=$?
 
 rm -rf ${TESTS_DIR}
+
+exit ${EXITSTATUS}
