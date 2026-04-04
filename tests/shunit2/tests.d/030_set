@@ -8,6 +8,41 @@ test_set_parsing()
 	assertFailWithNoReturn "${UCI_Q} set test.section.opt.zflk=val"
 }
 
+tests_set_parsing_keep_comments()
+{
+	# NB: $(command) removes all newlines at the end of the output of command
+	# so we can only use echo (or printf) for newlines not at the end
+
+	cp ${REF_DIR}/set_parsing.data ${CONFIG_DIR}/test
+
+	assertFailWithNoReturn2 ${UCI_Q} set 'test.=val'
+	assertFailWithNoReturn2 ${UCI_Q} set 'test.section.=val'
+	assertFailWithNoReturn2 ${UCI_Q} set 'test.section.opt.=val'
+	assertFailWithNoReturn2 ${UCI_Q} set 'test.section.opt.zflk=val'
+
+	# missing '#'
+	assertFailWithNoReturn2 ${UCI_Q} set "test.section.opt=val" ""
+	assertFailWithNoReturn2 ${UCI_Q} set "test.section.opt=val" " "
+	assertFailWithNoReturn2 ${UCI_Q} set "test.section.opt=val" "a"
+	assertFailWithNoReturn2 ${UCI_Q} set "test.section.opt=val" "
+"
+	# missing '#' immediately after first newline for comment line before option
+	assertFailWithNoReturn2 ${UCI_Q} set "test.section.opt=val" "#
+
+"
+	assertFailWithNoReturn2 ${UCI_Q} set "test.section.opt=val" "$(echo "#\n #")
+"
+	assertFailWithNoReturn2 ${UCI_Q} set "test.section.opt=val" "$(echo "#\na#")
+"
+
+	# missing '#' immediately after second newline for comment after option
+	assertFailWithNoReturn2 ${UCI_Q} set "test.section.opt=val" "$(echo "#\n#\n ")"
+	assertFailWithNoReturn2 ${UCI_Q} set "test.section.opt=val" "$(echo "#\n#\na")"
+	assertFailWithNoReturn2 ${UCI_Q} set "test.section.opt=val" "$(echo "#\n#")
+
+"
+}
+
 test_set_named_section()
 {
 	touch ${CONFIG_DIR}/set
@@ -15,11 +50,55 @@ test_set_named_section()
 	assertSameFile ${REF_DIR}/set_named_section.result ${CHANGES_DIR}/set
 }
 
+tests_set_named_section_keep_comments()
+{
+	# NB: $(command) removes all newlines at the end of the output of command
+	# so we can only use echo (or printf) for newlines not at the end
+
+	>"${CONFIG_DIR}/set"
+	${UCI} set 'set.section=named'
+	${UCI} set "set.section2=named" "#before1
+"
+	${UCI} set "set.section3=named" "$(echo "#before1\n#before2")
+"
+	${UCI} set "set.section4=named" "#after"
+	${UCI} set "set.section5=named" "$(echo "#before1\n#after")"
+	${UCI} set "set.section6=named" "$(echo "#before1\n#before2\n#after")"
+	${UCI} set "set.section7=named" "$(echo "#be\\\\fore1\n#be\\\\fore2\n#af\\\\ter")"
+	assertSameFile "${REF_DIR}/set_named_section_keep_comments.changes" "${CHANGES_DIR}/set"
+	${UCI} commit
+	assertSameFile "${REF_DIR}/set_named_section_keep_comments.result" "${CONFIG_DIR}/set"
+}
+
+test_set_option_in_nonexistent_section()
+{
+	>${CONFIG_DIR}/set
+	# section does not exist
+	assertFailWithNoReturn2 ${UCI_Q} set test.nonexistentsection.opt=val
+}
+
 test_set_nonexisting_option()
 {
 	cp ${REF_DIR}/set_nonexisting_option.data ${CONFIG_DIR}/set
 	${UCI} set set.section.opt=val
 	assertSameFile ${REF_DIR}/set_nonexisting_option.result ${CHANGES_DIR}/set
+}
+
+test_set_nonexistent_option_keep_comments()
+{
+	cp ${REF_DIR}/set_nonexistent_option_keep_comments.data ${CONFIG_DIR}/set
+	${UCI} set 'set.section.opt=val'
+	${UCI} set "set.section.opt2=val" "$(echo "#before1")
+"
+	${UCI} set "set.section.opt3=val" "$(echo "#before1\n#before2")
+"
+	${UCI} set "set.section.opt4=val" "$(echo "#after")"
+	${UCI} set "set.section.opt5=val" "$(echo "#before1\n#after")"
+	${UCI} set "set.section.opt6=val" "$(echo "#before1\n#before2\n#after")"
+	${UCI} set "set.section.opt7=val" "$(echo "#be\\\\fore1\n#be\\\\fore2\n#af\\\\ter")"
+	assertSameFile "${REF_DIR}/set_nonexistent_option_keep_comments.changes" "${CHANGES_DIR}/set"
+	${UCI} commit
+	assertSameFile "${REF_DIR}/set_nonexistent_option_keep_comments.result" "${CONFIG_DIR}/set"
 }
 
 test_set_nonexisting_option_multiline()
@@ -30,11 +109,61 @@ World\""
 	assertSameFile ${REF_DIR}/set_nonexisting_option_multiline.result ${CHANGES_DIR}/set
 }
 
+test_set_nonexistent_option_multiline_keep_comments()
+{
+	cp "${REF_DIR}/set_nonexistent_option_multiline_keep_comments.data" "${CONFIG_DIR}/set"
+	${UCI} set set.section.opt8="Hello,\'
+World\"" "$(echo "#beforea\n#beforeb\n#afterc")"
+	${UCI} commit
+	assertSameFile "${REF_DIR}/set_nonexistent_option_multiline_keep_comments.result" "${CONFIG_DIR}/set"
+}
+
 test_set_existing_option()
 {
 	cp ${REF_DIR}/set_existing_option.data ${CONFIG_DIR}/set
 	${UCI} set set.section.opt=val
 	assertSameFile ${REF_DIR}/set_existing_option.result ${CHANGES_DIR}/set
+}
+
+test_set_existing_option_keep_comments()
+{
+	cp "${REF_DIR}/set_existing_option_keep_comments.data" "${CONFIG_DIR}/set"
+	${UCI} set set.section.opt=val
+	${UCI} set "set.section.opt2=val" "#before1
+"
+	${UCI} set "set.section.opt3=val" "$(echo "#before1\n#before2")
+"
+	${UCI} set "set.section.opt4=val" "#after"
+	${UCI} set "set.section.opt5=val" "$(echo "#before1\n#after")"
+	${UCI} set "set.section.opt6=val" "$(echo "#before1\n#before2\n#after")"
+	${UCI} set "set.section.opt7=val" "$(echo "#be\\\\fore1\n#be\\\\fore2\n#af\\\\ter")"
+	${UCI} commit
+	assertSameFile "${REF_DIR}/set_existing_option_keep_comments.result" "${CONFIG_DIR}/set"
+}
+
+test_set_keep_comments()
+{
+	cp ${REF_DIR}/set_keep_comments.data ${CONFIG_DIR}/set
+
+	# Test that a set command without comments removes the original comments
+	# associated with the entry
+
+	# original section has comment lines before
+	${UCI} set set.section=named
+	# original section has comment after
+	${UCI} set set.section2=named
+	# original section has comment lines before and comment after
+	${UCI} set set.section3=named
+
+	# original option has comment lines before
+	${UCI} set set.section.opt=val
+	# original option has comment after
+	${UCI} set set.section.opt2=val
+	# original option has comment lines before and comment after
+	${UCI} set set.section.opt3=val
+
+	${UCI} commit
+	assertSameFile ${REF_DIR}/set_keep_comments.result ${CONFIG_DIR}/set
 }
 
 test_set_existing_option_multiline()
@@ -43,4 +172,13 @@ test_set_existing_option_multiline()
 	${UCI} set set.section.opt="Hello,\'
 World\""
 	assertSameFile ${REF_DIR}/set_existing_option_multiline.result ${CHANGES_DIR}/set
+}
+
+test_set_existing_option_multiline_keep_comments()
+{
+	cp "${REF_DIR}/set_existing_option_multiline_keep_comments.data" "${CONFIG_DIR}/set"
+	${UCI} set set.section.opt2="Hello,\'
+World\"" "$(echo "#beforea\n#beforeb\n#afterc")"
+	${UCI} commit
+	assertSameFile "${REF_DIR}/set_existing_option_multiline_keep_comments.result" "${CONFIG_DIR}/set"
 }

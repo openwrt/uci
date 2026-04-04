@@ -1,0 +1,6 @@
+|test.section.listopt='val'##before1\n
+|test.section.listopt='val2'##before1\n#before2\n
+|test.section.listopt='val3'##after
+|test.section.listopt='val4'##before1\n#after
+|test.section.listopt='val5'##before1\n#before2\n#after
+|test.section.listopt='val6'##be\\fore1\n#be\\fore2\n#af\\ter

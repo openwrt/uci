@@ -1,0 +1,17 @@
+
+config type 'section1'
+	option opt 'val'
+	list list_opt 'val0'
+	list list_opt 'val1'
+
+config type 'section3'
+	option opt 'val7'
+	list list_opt 'val5'
+	list list_opt 'val6'
+	option opt2 'val8'
+
+config type 'section2'
+	option opt 'val4'
+	list list_opt 'val5'
+	list list_opt 'val6'
+

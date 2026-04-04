@@ -27,6 +27,18 @@ struct uci_parse_context
 
 	/* private: */
 	struct uci_package *package;
+	/*
+	 * comment format: [<comment_before>][<comment_after>]
+	 * <comment_before>: comment lines placed before the element line,
+	 *    concatenated, each starting with '#' and ending with '\n'.
+	 * <comment_after>: comment at the end of the element line itself,
+	 *    starting with '#' and ending without '\n'.
+	 * Example: "#commentlinebefore1\n#commentlinebefore2\n#commentafter"
+	 * NULL and empty string mean no comment.
+	 */
+	char *commentbuf;
+	size_t commentbufsz;
+	size_t commentlen;
 	struct uci_section *section;
 	bool merge;
 	FILE *file;
@@ -42,19 +54,21 @@ struct uci_parse_context
 #define pctx_char(pctx, i)	((pctx)->buf[(i)])
 #define pctx_cur_char(pctx)	pctx_char(pctx, pctx_pos(pctx))
 
-#define uci_alloc_element(ctx, type, name, datasize) \
-	uci_to_ ## type (uci_alloc_generic(ctx, uci_type_ ## type, name, sizeof(struct uci_ ## type) + datasize))
+#define uci_alloc_element(ctx, comment, type, name, datasize) \
+	uci_to_ ## type (uci_alloc_generic(ctx, comment, uci_type_ ## type, name, sizeof(struct uci_ ## type) + datasize))
 
 extern const char *uci_confdir;
 extern const char *uci_savedir;
+
+__private int uci_add_section_with_comment(struct uci_context *ctx, struct uci_package *p, const char *comment, const char *type, struct uci_section **res);
 
 __private void *uci_malloc(struct uci_context *ctx, size_t size);
 __private void *uci_realloc(struct uci_context *ctx, void *ptr, size_t size);
 __private char *uci_strdup(struct uci_context *ctx, const char *str);
 __private bool uci_validate_str(const char *str, bool name, bool package);
-__private void uci_add_delta(struct uci_context *ctx, struct uci_list *list, int cmd, const char *section, const char *option, const char *value);
+__private void uci_add_delta(struct uci_context *ctx, struct uci_list *list, int cmd, const char *section, const char *option, const char *value, const char *comment);
 __private void uci_free_delta(struct uci_delta *h);
-__private struct uci_package *uci_alloc_package(struct uci_context *ctx, const char *name);
+__private struct uci_package *uci_alloc_package(struct uci_context *ctx, const char *comment, const char *name);
 
 __private FILE *uci_open_stream(struct uci_context *ctx, const char *filename, const char *origfilename, int pos, bool write, bool create);
 __private void uci_close_stream(FILE *stream);
@@ -66,7 +80,7 @@ __private void uci_alloc_parse_context(struct uci_context *ctx);
 __private void uci_cleanup(struct uci_context *ctx);
 __private struct uci_element *uci_lookup_list(struct uci_list *list, const char *name);
 __private void uci_free_package(struct uci_package **package);
-__private struct uci_element *uci_alloc_generic(struct uci_context *ctx, int type, const char *name, int size);
+__private struct uci_element *uci_alloc_generic(struct uci_context *ctx, const char *comment, int type, const char *name, int size);
 __private void uci_free_element(struct uci_element *e);
 __private struct uci_element *uci_expand_ptr(struct uci_context *ctx, struct uci_ptr *ptr, bool complete);
 

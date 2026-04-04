@@ -1,0 +1,17 @@
+
+config named 'section'
+	option opt 'val'
+	option opt2 'val'
+	option opt3 'val'
+
+config named 'section2'
+
+config named 'section3'
+
+#before5
+#before6
+config named 'section4' # after5
+	#before7
+	#before8
+	option opt3 'val3' # after6
+

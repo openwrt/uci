@@ -30,3 +30,22 @@ test_changes_missing_value()
 		assertNull "$val"
 	done
 }
+
+test_changes_keep_comments()
+{
+	touch "$CONFIG_DIR/test"
+
+	assertSuccess ${UCI} set 'test.section1=type'
+	assertSuccess ${UCI} set 'test.section1.opt1=val'
+	assertSuccess ${UCI} add_list 'test.section1.listopt1=listval1'
+	assertSuccess ${UCI} add_list 'test.section1.listopt1=listval2'
+
+	assertSuccess ${UCI} set 'test.section2=type' "$(echo "# before section2\n# after section2")"
+	assertSuccess ${UCI} set 'test.section2.opt1=val' "$(echo "# before section2.opt1\n# after section2.opt1")"
+	assertSuccess ${UCI} add_list 'test.section2.listopt1=listval1' "$(echo "# before section2.listopt1")
+"
+	assertSuccess ${UCI} add_list 'test.section2.listopt1=listval2' '# af\ter section2.listopt1'
+
+	assertSuccess ${UCI} changes >"$CONFIG_DIR/test.changes"
+	assertSameFile "${REF_DIR}/changes_keep_comments.result" "${CONFIG_DIR}/test.changes"
+}

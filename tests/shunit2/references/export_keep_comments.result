@@ -1,0 +1,20 @@
+package export
+
+# lots
+#  of
+#   comment
+#    lines
+config type 'section'
+	option opt 'val'
+	list list_opt 'val0'
+	list list_opt 'val1' ###### another comment after val1
+	# lots
+	# more
+	# comment
+	# lines
+	option mul_line_opt_sq 'line 1
+line 2 \
+line 3'
+	option mul_line_opt_dq '"Hello, World.'\''
+'
+

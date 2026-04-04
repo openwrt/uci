@@ -1,0 +1,8 @@
+test.section1='type'
+test.section1.opt1='val'
+test.section1.listopt1+='listval1'
+test.section1.listopt1+='listval2'
+test.section2='type'## before section2\n# after section2
+test.section2.opt1='val'## before section2.opt1\n# after section2.opt1
+test.section2.listopt1+='listval1'## before section2.listopt1\n
+test.section2.listopt1+='listval2'## af\\ter section2.listopt1

@@ -113,6 +113,88 @@ static void skip_whitespace(struct uci_context *ctx)
 		pctx->pos += 1;
 }
 
+static void uci_comment_append(struct uci_context *ctx, const char *comment)
+{
+	struct uci_parse_context *pctx = ctx->pctx;
+	const size_t len = strlen(comment);
+	const size_t requiredsz = pctx->commentlen + len + 1;
+
+	if (requiredsz > pctx->commentbufsz) {
+		pctx->commentbufsz *= 2;
+		if (requiredsz > pctx->commentbufsz)
+			pctx->commentbufsz = requiredsz;
+		pctx->commentbuf = uci_realloc(ctx, pctx->commentbuf, pctx->commentbufsz);
+	}
+
+	memcpy(pctx->commentbuf + pctx->commentlen, comment, len + 1);
+	pctx->commentlen += len;
+}
+
+/*
+ * parse a comment line before a non-comment line
+ * pctx position must be at '#'
+ */
+static void uci_parse_comment_before(struct uci_context *ctx)
+{
+	UCI_ASSERT(ctx, pctx_cur_char(ctx->pctx) == '#');
+
+	uci_comment_append(ctx, pctx_cur_str(ctx->pctx));
+}
+
+/*
+ * parse a comment at the end of a non-comment line
+ * pctx position must be at '#'
+ */
+static void uci_parse_comment_after(struct uci_context *ctx)
+{
+	struct uci_parse_context *pctx = ctx->pctx;
+	const size_t len = strlen(pctx_cur_str(pctx));
+
+	UCI_ASSERT(ctx, pctx_cur_char(pctx) == '#');
+
+	/* cut off newline if present: this indicates that it's a comment
+	 * at the end of the non-comment line instead of a comment line
+	 * before the non-comment line. */
+	if (pctx_cur_str(pctx)[len - 1] == '\n')
+		pctx_cur_str(pctx)[len - 1] = '\0';
+
+	uci_comment_append(ctx, pctx_cur_str(pctx));
+}
+
+static void uci_fprintf_comment_before(struct uci_context const *ctx, FILE *stream, const char *indent, const char *comment)
+{
+	if ((!(ctx->flags & UCI_FLAG_NO_COMMENTS)) && comment && comment[0]) {
+		char *newline_ptr = strrchr(comment, '\n');
+		if (newline_ptr) {
+			fprintf(stream, "%s", indent);
+			for (const char *readptr = comment; readptr <= newline_ptr; readptr++) {
+				putc(*readptr, stream);
+				if (*readptr == '\n' && readptr != newline_ptr)
+					fprintf(stream, "%s", indent);
+			}
+		}
+	}
+}
+
+static void uci_fprintf_comment_after(struct uci_context const *ctx, FILE *stream, const char *comment)
+{
+	if ((!(ctx->flags & UCI_FLAG_NO_COMMENTS)) && comment && comment[0]) {
+		const char *ptr = strrchr(comment, '\n');
+		ptr = ptr ? (ptr + 1) : comment;
+		if (*ptr)
+			fprintf(stream, " %s", ptr);
+	}
+}
+
+static void uci_reset_comment(struct uci_context *ctx)
+{
+	struct uci_parse_context *pctx = ctx->pctx;
+
+	if (pctx->commentbuf)
+		pctx->commentbuf[0] = '\0';
+	pctx->commentlen = 0;
+}
+
 static inline void addc(struct uci_context *ctx, size_t *pos_dest, size_t *pos_src)
 {
 	struct uci_parse_context *pctx = ctx->pctx;
@@ -211,6 +293,8 @@ static void parse_str(struct uci_context *ctx, size_t *target)
 			parse_double_quote(ctx, target);
 			break;
 		case '#':
+			if (!(ctx->flags & UCI_FLAG_NO_COMMENTS))
+				uci_parse_comment_after(ctx);
 			pctx_cur_char(pctx) = 0;
 			/* fall through */
 		case 0:
@@ -270,6 +354,35 @@ done:
 	return val;
 }
 
+static void uci_unescape_comment(char *comment, bool skip_hash)
+{
+	char *readptr = comment;
+	char *writeptr = comment;
+
+	if (skip_hash && *readptr == '#')
+		readptr++;
+
+	while (*readptr) {
+		if (*readptr != '\\')
+			*writeptr = *readptr;
+		else {
+			if (readptr[1] == '\\') {
+				*writeptr = '\\';
+				readptr++;
+			}
+			else if (readptr[1] == 'n') {
+				*writeptr = '\n';
+				readptr++;
+			}
+			else
+				*writeptr = '\\';
+		}
+		readptr++;
+		writeptr++;
+	}
+	*writeptr = '\0';
+}
+
 int uci_parse_argument(struct uci_context *ctx, FILE *stream, char **str, char **result)
 {
 	int ofs_result;
@@ -290,9 +403,16 @@ int uci_parse_argument(struct uci_context *ctx, FILE *stream, char **str, char *
 		uci_getln(ctx, 0);
 	}
 
+	uci_reset_comment(ctx);
+
 	ofs_result = next_arg(ctx, false, false, false);
 	*result = pctx_str(ctx->pctx, ofs_result);
 	*str = pctx_cur_str(ctx->pctx);
+
+	if (ctx->pctx->commentbuf) {
+		uci_unescape_comment(ctx->pctx->commentbuf, true);
+		ctx->pctx->commentlen = strlen(ctx->pctx->commentbuf);
+	}
 
 	return 0;
 }
@@ -354,7 +474,7 @@ static void assert_eol(struct uci_context *ctx)
  * switch to a different config, either triggered by uci_load, or by a
  * 'package <...>' statement in the import file
  */
-static void uci_switch_config(struct uci_context *ctx)
+static void uci_switch_config(struct uci_context *ctx, bool with_comment)
 {
 	struct uci_parse_context *pctx;
 	struct uci_element *e;
@@ -382,7 +502,7 @@ static void uci_switch_config(struct uci_context *ctx)
 	e = uci_lookup_list(&ctx->root, name);
 	if (e)
 		UCI_THROW(ctx, UCI_ERR_DUPLICATE);
-	pctx->package = uci_alloc_package(ctx, name);
+	pctx->package = uci_alloc_package(ctx, with_comment ? pctx->commentbuf : NULL, name);
 }
 
 /*
@@ -401,11 +521,12 @@ static void uci_parse_package(struct uci_context *ctx, bool single)
 	ofs_name = next_arg(ctx, true, true, true);
 	assert_eol(ctx);
 	name = pctx_str(pctx, ofs_name);
-	if (single)
-		return;
+	if (!single) {
+		ctx->pctx->name = name;
+		uci_switch_config(ctx, true);
+	}
 
-	ctx->pctx->name = name;
-	uci_switch_config(ctx);
+	uci_reset_comment(ctx);
 }
 
 /*
@@ -424,7 +545,7 @@ static void uci_parse_config(struct uci_context *ctx)
 		if (!ctx->pctx->name)
 			uci_parse_error(ctx, "attempting to import a file without a package name");
 
-		uci_switch_config(ctx);
+		uci_switch_config(ctx, false);
 	}
 
 	/* command string null-terminated by strtok */
@@ -443,7 +564,7 @@ static void uci_parse_config(struct uci_context *ctx)
 
 	if (!name || !name[0]) {
 		ctx->internal = !pctx->merge;
-		UCI_NESTED(uci_add_section, ctx, pctx->package, type, &pctx->section);
+		UCI_NESTED(uci_add_section_with_comment, ctx, pctx->package, pctx->commentbuf, type, &pctx->section);
 	} else {
 		uci_fill_ptr(ctx, &ptr, &pctx->package->e);
 		e = uci_lookup_list(&pctx->package->sections, name);
@@ -454,6 +575,7 @@ static void uci_parse_config(struct uci_context *ctx)
 				uci_parse_error(ctx, "section of different type overwrites prior section with same name");
 		}
 
+		ptr.comment = pctx->commentbuf;
 		ptr.section = name;
 		ptr.value = type;
 
@@ -461,6 +583,8 @@ static void uci_parse_config(struct uci_context *ctx)
 		UCI_NESTED(uci_set, ctx, &ptr);
 		pctx->section = ptr.s;
 	}
+
+	uci_reset_comment(ctx);
 }
 
 /*
@@ -492,6 +616,7 @@ static void uci_parse_option(struct uci_context *ctx, bool list)
 	e = uci_lookup_list(&pctx->section->options, name);
 	if (e)
 		ptr.o = uci_to_option(e);
+	ptr.comment = pctx->commentbuf;
 	ptr.option = name;
 	ptr.value = value;
 
@@ -500,6 +625,8 @@ static void uci_parse_option(struct uci_context *ctx, bool list)
 		UCI_NESTED(uci_add_list, ctx, &ptr);
 	else
 		UCI_NESTED(uci_set, ctx, &ptr);
+
+	uci_reset_comment(ctx);
 }
 
 /*
@@ -512,6 +639,14 @@ static void uci_parse_line(struct uci_context *ctx, bool single)
 
 	/* Skip whitespace characters at the start of line */
 	skip_whitespace(ctx);
+
+	/* Keep comment line as is, do not tokenize */
+	if (pctx_cur_char(pctx) == '#') {
+		if (!(ctx->flags & UCI_FLAG_NO_COMMENTS))
+			uci_parse_comment_before(ctx);
+		return;
+	}
+
 	do {
 		word = strtok(pctx_cur_str(pctx), " \t");
 		if (!word)
@@ -612,25 +747,38 @@ static void uci_export_package(struct uci_package *p, FILE *stream, bool header)
 	struct uci_context *ctx = p->ctx;
 	struct uci_element *s, *o, *i;
 
-	if (header)
-		fprintf(stream, "package %s\n", uci_escape(ctx, p->e.name));
+	if (header) {
+		uci_fprintf_comment_before(ctx, stream, "", p->e.comment);
+		fprintf(stream, "package %s", uci_escape(ctx, p->e.name));
+		uci_fprintf_comment_after(ctx, stream, p->e.comment);
+		fprintf(stream, "\n");
+	}
 	uci_foreach_element(&p->sections, s) {
 		struct uci_section *sec = uci_to_section(s);
-		fprintf(stream, "\nconfig %s", uci_escape(ctx, sec->type));
+		fprintf(stream, "\n");
+		uci_fprintf_comment_before(ctx, stream, "", sec->e.comment);
+		fprintf(stream, "config %s", uci_escape(ctx, sec->type));
 		if (!sec->anonymous || (ctx->flags & UCI_FLAG_EXPORT_NAME))
 			fprintf(stream, " '%s'", uci_escape(ctx, sec->e.name));
+		uci_fprintf_comment_after(ctx, stream, sec->e.comment);
 		fprintf(stream, "\n");
 		uci_foreach_element(&sec->options, o) {
 			struct uci_option *opt = uci_to_option(o);
 			switch(opt->type) {
 			case UCI_TYPE_STRING:
+				uci_fprintf_comment_before(ctx, stream, "\t", opt->e.comment);
 				fprintf(stream, "\toption %s", uci_escape(ctx, opt->e.name));
-				fprintf(stream, " '%s'\n", uci_escape(ctx, opt->v.string));
+				fprintf(stream, " '%s'", uci_escape(ctx, opt->v.string));
+				uci_fprintf_comment_after(ctx, stream, opt->e.comment);
+				fprintf(stream, "\n");
 				break;
 			case UCI_TYPE_LIST:
 				uci_foreach_element(&opt->v.list, i) {
+					uci_fprintf_comment_before(ctx, stream, "\t", i->comment);
 					fprintf(stream, "\tlist %s", uci_escape(ctx, opt->e.name));
-					fprintf(stream, " '%s'\n", uci_escape(ctx, i->name));
+					fprintf(stream, " '%s'", uci_escape(ctx, i->name));
+					uci_fprintf_comment_after(ctx, stream, i->comment);
+					fprintf(stream, "\n");
 				}
 				break;
 			default:
@@ -703,14 +851,14 @@ error:
 	}
 
 	if (!pctx->package && name)
-		uci_switch_config(ctx);
+		uci_switch_config(ctx, false);
 	if (package)
 		*package = pctx->package;
 	if (pctx->merge)
 		pctx->package = NULL;
 
 	pctx->name = NULL;
-	uci_switch_config(ctx);
+	uci_switch_config(ctx, false);
 
 	/* no error happened, we can get rid of the parser context now */
 	uci_cleanup(ctx);

@@ -1,0 +1,13 @@
+
+config type 'section1'
+	option opt 'val'
+	option opt2 'val2'
+	list listopt 'val3'
+	list listopt 'val4'
+
+config type 'section2'
+	option opt 'val'
+	option opt2 'val2'
+	list listopt 'val3'
+	list listopt 'val4'
+

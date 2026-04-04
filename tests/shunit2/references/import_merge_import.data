@@ -1,0 +1,11 @@
+package 'import-test'
+
+config type 'section2'
+	option 'opt' 'val4'
+	list 'list_opt' 'val5'
+	list 'list_opt' 'val6'
+
+config type 'section3'
+	option 'opt' 'val7'
+	option 'opt2' 'val8'
+

@@ -1,0 +1,21 @@
+#before1
+config typea section1
+
+#before1
+#before2
+config typeb section2
+
+config typec section3 #after
+
+#before1
+config typed section4 #after
+
+#before1
+
+#before2
+config typee section5 #after
+
+#be\fo're
+config typef section6 #af\te'r
+
+config typeg section7

@@ -1,0 +1,24 @@
+
+# comment 1
+config type 'section1' # comment 2
+	# comment 3
+	option opt 'val' # comment 4
+	option opt2 'val2' # comment 5
+# comment 6
+	list listopt 'val3' # comment 7
+	# comment 8
+	# comment 9
+	list listopt 'val4' # comment 10
+
+# comment 11
+#
+  # comment 12
+config type 'section2' # comment 13
+	option opt 'val'
+	# comment 14
+	# comment 15
+	option opt2 'val2'
+	list listopt 'val3' # comment 16
+	# comment 17
+	list listopt 'val4' # comment 18
+

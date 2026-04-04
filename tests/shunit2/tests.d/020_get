@@ -10,6 +10,24 @@ test_get_parsing()
 	assertFailWithNoReturn "${UCI_Q} get test.section.opt.valqsqsd"
 }
 
+test_get_parsing_keep_comments()
+{
+	cp ${REF_DIR}/get_parsing_keep_comments.data ${CONFIG_DIR}/test
+
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.'
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.section.'
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.section.opt.'
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.section.opt.val.'
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.section.opt.val.qsdf.qsd'
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.section.opt.valqsqsd'
+
+	assertFailWithNoReturn2DiscardStderr ${UCI_Q} get 'test.section.opt' '## '
+	assertFailWithNoReturn2DiscardStderr ${UCI_Q} get 'test.section.opt=val' '##'
+	assertFailWithNoReturn2DiscardStderr ${UCI_Q} get 'test.section.opt=val' '## '
+
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.section' '##'
+}
+
 test_get_section_index_parsing()
 {
 	cp ${REF_DIR}/get_parsing.data ${CONFIG_DIR}/test
@@ -24,11 +42,132 @@ test_get_section_index_parsing()
 	assertFailWithNoReturn "${UCI_Q} get test.@[1].val."
 }
 
+test_get_section_index_parsing_keep_comments()
+{
+	cp ${REF_DIR}/get_parsing.data ${CONFIG_DIR}/test
+
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.@'
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.@zer.'
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.@.'
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.@zer[1]'
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.@.opt'
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.@[28]'
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.@[1].'
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.@[1].val.'
+
+	assertFailWithNoReturn2DiscardStderr ${UCI_Q} get 'test.@[1]' '## '
+	assertFailWithNoReturn2DiscardStderr ${UCI_Q} get 'test.@[1].opt' '## '
+	assertFailWithNoReturn2DiscardStderr ${UCI_Q} get 'test.@[1].opt=val' '##'
+	assertFailWithNoReturn2DiscardStderr ${UCI_Q} get 'test.@[1].opt=val' '## '
+
+	assertFailWithNoReturn2 ${UCI_Q} get 'test.@[1]' '##'
+}
+
+test_get_section_keep_comments()
+{
+	cp ${REF_DIR}/get_section_keep_comments.data ${CONFIG_DIR}/test
+
+	type="$(${UCI} get test.section1)"
+	assertEquals "typea" "$type"
+	comment="$(${UCI} get 'test.section1' '#')"
+	assertEquals "$(echo "'#before1\n'")" "$comment"
+
+	type="$(${UCI} get test.section2)"
+	assertEquals "typeb" "$type"
+	comment="$(${UCI} get 'test.section2' '#')"
+	assertEquals "$(echo "'#before1\n#before2\n'")" "$comment"
+
+	type="$(${UCI} get test.section3)"
+	assertEquals "typec" "$type"
+	comment="$(${UCI} get 'test.section3' '#')"
+	assertEquals "'#after'" "$comment"
+
+	type="$(${UCI} get test.section4)"
+	assertEquals "typed" "$type"
+	comment="$(${UCI} get 'test.section4' '#')"
+	assertEquals "$(echo "'#before1\n#after'")" "$comment"
+
+	type="$(${UCI} get test.section5)"
+	assertEquals "typee" "$type"
+	comment="$(${UCI} get 'test.section5' '#')"
+	assertEquals "$(echo "'#before1\n#before2\n#after'")" "$comment"
+
+	type="$(${UCI} get test.section6)"
+	assertEquals "typef" "$type"
+	# uci should print:
+	# '#be\fo'\''re
+	# af\te'\''r'
+	comment="$(${UCI} get 'test.section6' '#')"
+	assertEquals "$(echo "'#be\\\\fo'\\\\''re\n#af\\\\te'\\\\''r'")" "$comment"
+
+	type="$(${UCI} get test.section7)"
+	assertEquals "typeg" "$type"
+	comment="$(${UCI} get 'test.section7' '#')"
+	assertEquals "''" "$comment"
+}
+
 test_get_option()
 {
 	cp ${REF_DIR}/get.data ${CONFIG_DIR}/test
 	value=$($UCI get test.section.opt)
 	assertEquals 'val' "$value"
+}
+
+test_get_option_keep_comments()
+{
+	cp ${REF_DIR}/get_option_keep_comments.data ${CONFIG_DIR}/test
+
+	value="$($UCI get 'test.section.opt1')"
+	assertEquals "val1" "$value"
+	comment="$($UCI get 'test.section.opt1' '#')"
+	assertEquals "$(echo "'#before1\n'")" "$comment"
+
+	value="$($UCI get 'test.section.opt2')"
+	assertEquals "val2" "$value"
+	comment="$($UCI get 'test.section.opt2' '#')"
+	assertEquals "$(echo "'#before1\n#before2\n'")" "$comment"
+
+	value="$($UCI get 'test.section.opt3')"
+	assertEquals "val3" "$value"
+	comment="$($UCI get 'test.section.opt3' '#')"
+	assertEquals "'#after'" "$comment"
+
+	value="$($UCI get 'test.section.opt4')"
+	assertEquals "val4" "$value"
+	comment="$($UCI get 'test.section.opt4' '#')"
+	assertEquals "$(echo "'#before1\n#after'")" "$comment"
+
+	value="$($UCI get 'test.section.opt5')"
+	assertEquals "val5" "$value"
+	comment="$($UCI get 'test.section.opt5' '#')"
+	assertEquals "$(echo "'#before1\n#before2\n#after'")" "$comment"
+
+	value="$($UCI get 'test.section.opt6')"
+	assertEquals "val6" "$value"
+	# uci should print:
+	# '#be\fo'\''re
+	# af\te'\''r'
+	comment="$($UCI get 'test.section.opt6' '#')"
+	assertEquals "$(echo "'#be\\\\fo'\\\\''re\n#af\\\\te'\\\\''r'")" "$comment"
+
+	value="$($UCI get 'test.section.opt7')"
+	assertEquals "val7" "$value"
+	comment="$($UCI get 'test.section.opt7' '#')"
+	assertEquals "''" "$comment"
+
+	value="$($UCI get 'test.section.listopt')"
+	assertEquals "vala valb valc vald valc valf vala" "$value"
+	# uci should print:
+	# '#before1
+	# ' '#before1
+	# #before2
+	# ' '#after' '#before1
+	# #after' '#before1
+	# #before2
+	# #after' '#be\fo'\''re
+	# af\te'\''r' ''
+	comment="$($UCI get 'test.section.listopt' '#')"
+	assertEquals "$(echo "'#before1\n' '#before1\n#before2\n' '#after' '#before1\n#after' '#before1\n#before2\n#after' '#be\\\\fo'\\\\''re\n#af\\\\te'\\\\''r' ''")" "$comment"
 }
 
 test_get_option_multiline()
@@ -37,6 +176,16 @@ test_get_option_multiline()
 	value="$($UCI get test.section.opt)"
 	assertEquals '"Hello, World.
 '\''' "$value"
+}
+
+test_get_option_multiline_keep_comments()
+{
+	cp "${REF_DIR}/get_option_multiline_keep_comments.data" "${CONFIG_DIR}/test"
+	value="$($UCI get test.section.opt)"
+	assertEquals '"Hello, World.
+  '\''' "$value"
+	comment="$($UCI get 'test.section.opt' '#')"
+	assertEquals "$(echo "'# Can preserve trailing whitespace with assertEquals.\n### comment4'")" "$comment"
 }
 
 test_get_section()

@@ -1,0 +1,7 @@
+### comment1
+config 'type' 'section' ### comment2
+	# Can preserve trailing whitespace with assertEquals.
+	option opt "\"Hello, \
+World.
+  \'" ### comment4
+### comment5

@@ -87,6 +87,10 @@ make -C "${BUILDDIR}" test CTEST_OUTPUT_ON_FAILURE=1
 
 set +x
 echo "✅ Success - uci is available at ${BUILDDIR}"
+echo "👷 The test log is available at ${BUILDDIR}/Testing/Temporary/LastTest.log"
 echo "👷 You can rebuild uci by running 'make -C build'"
+echo "👷 To run a specific shunit2 test, set SHUNIT2_TEST_TO_RUN. For example:"
+echo "   SHUNIT2_TEST_TO_RUN=test_delete_option $0"
+echo ""
 
 exit 0

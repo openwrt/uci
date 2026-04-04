@@ -101,6 +101,21 @@ bool uci_validate_text(const char *str)
 	return true;
 }
 
+bool uci_validate_comment(const char *comment)
+{
+	const char *readptr = comment;
+
+	do {
+		if (*readptr != '#')
+			return false;
+		readptr = strchr(readptr, '\n');
+		if (readptr)
+			readptr++;
+	} while (readptr && *readptr);
+
+	return true;
+}
+
 __private void uci_alloc_parse_context(struct uci_context *ctx)
 {
 	ctx->pctx = (struct uci_parse_context *) uci_malloc(ctx, sizeof(struct uci_parse_context));

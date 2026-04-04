@@ -1,0 +1,65 @@
+config type 'section'
+	#before1
+	option opt1 'val1'
+
+	#before1
+	#before2
+	option opt2 'val2'
+
+	option opt3 'val3' #after
+
+	#before1
+	option opt4 'val4' #after
+
+	#before1
+
+	#before2
+	option opt5 'val5' #after
+
+	#be\fo're
+	option opt6 'val6' #af\te'r
+
+	option opt7 'val7'
+
+	#before1
+	list listopt 'vala'
+
+	#before1
+	#before2
+	list listopt 'valb'
+
+	list listopt 'valc' #after
+
+	#before1
+	list listopt 'vald' #after
+
+	#before1
+
+	#before2
+	list listopt 'valc' #after
+
+	#be\fo're
+	list listopt 'valf' #af\te'r
+
+	list listopt 'vala'
+
+#before1
+config type 'section2'
+
+#before1
+#before2
+config type 'section3'
+
+config type 'section4' #after
+
+#before1
+config type 'section5' #after
+
+#before1
+#before2
+config type 'section6' #after
+
+#be\fore1
+#be\fore2
+config type 'section7' #af\ter
+

@@ -1,0 +1,11 @@
+# comment line before section
+config 'type' 'section' # comment line after section
+	# comment line before opt
+	option 'opt'	'val'#comment line after opt !@#$%^&*()_+[]{}
+# another comment
+
+# comment line before unnamed !@#$%^&*()_+[]{}
+config 'unnamed' # comment line after unnamed !@#$%^&*()_+[]{}
+	option 'opt1'	'val1' ## after val1
+
+# another comment at eof

@@ -1,0 +1,6 @@
+
+# comment before section
+config named 'section' # comment after section
+	# comment before opt
+	option opt 'optval' # comment after opt
+

@@ -1,0 +1,7 @@
+set.section='named'
+set.section2='named'##before1\n
+set.section3='named'##before1\n#before2\n
+set.section4='named'##after
+set.section5='named'##before1\n#after
+set.section6='named'##before1\n#before2\n#after
+set.section7='named'##be\\fore1\n#be\\fore2\n#af\\ter

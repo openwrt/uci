@@ -33,7 +33,7 @@
 
 /* record a change that was done to a package */
 void
-uci_add_delta(struct uci_context *ctx, struct uci_list *list, int cmd, const char *section, const char *option, const char *value)
+uci_add_delta(struct uci_context *ctx, struct uci_list *list, int cmd, const char *section, const char *option, const char *value, const char *comment)
 {
 	struct uci_delta *h;
 	int size = strlen(section) + 1;
@@ -42,7 +42,7 @@ uci_add_delta(struct uci_context *ctx, struct uci_list *list, int cmd, const cha
 	if (value)
 		size += strlen(value) + 1;
 
-	h = uci_alloc_element(ctx, delta, option, size);
+	h = uci_alloc_element(ctx, (ctx->flags & UCI_FLAG_NO_COMMENTS) ? NULL : comment, delta, option, size);
 	ptr = uci_dataptr(h);
 	h->cmd = cmd;
 	h->section = strcpy(ptr, section);
@@ -64,6 +64,33 @@ uci_free_delta(struct uci_delta *h)
 		free(h->value);
 	}
 	uci_free_element(&h->e);
+}
+
+static void uci_fprintf_escaped_comment(FILE *f, const char *comment)
+{
+	if (!comment || !comment[0])
+		return;
+
+	/*
+	 * Older uci versions just ignore the '#' and everything behind it, up
+	 * to and including the newline, and expect the next change on the
+	 * next line.
+	 * To be compatible with those older versions, we do not output
+	 * multiline strings here. Instead, we escape '\\' and '\n' in the
+	 * comment. Older versions will then work, just not put the comments
+	 * in the configuration file.
+	 */
+	fputc('#', f);
+	for (const char *readptr = comment; *readptr; readptr++) {
+		if (*readptr == '\\') {
+			fputc('\\', f);
+			fputc('\\', f);
+		} else if (*readptr == '\n') {
+			fputc('\\', f);
+			fputc('n', f);
+		} else
+			fputc(*readptr, f);
+	}
 }
 
 static void uci_delta_save(struct uci_context *ctx, FILE *f,
@@ -92,7 +119,9 @@ static void uci_delta_save(struct uci_context *ctx, FILE *f,
 			else
 				fprintf(f, "'\\''");
 		}
-		fprintf(f, "'\n");
+		fprintf(f, "'");
+		uci_fprintf_escaped_comment(f, e->comment);
+		fprintf(f, "\n");
 	}
 }
 
@@ -114,7 +143,7 @@ int uci_set_savedir(struct uci_context *ctx, const char *dir)
 		}
 	}
 	if (!exists)
-		e = uci_alloc_generic(ctx, UCI_TYPE_PATH, dir, sizeof(struct uci_element));
+		e = uci_alloc_generic(ctx, NULL, UCI_TYPE_PATH, dir, sizeof(struct uci_element));
 	uci_list_add(&ctx->delta_path, &e->list);
 
 	sdir = uci_strdup(ctx, dir);
@@ -138,7 +167,7 @@ int uci_add_delta_path(struct uci_context *ctx, const char *dir)
 			UCI_THROW(ctx, UCI_ERR_DUPLICATE);
 	}
 
-	e = uci_alloc_generic(ctx, UCI_TYPE_PATH, dir, sizeof(struct uci_element));
+	e = uci_alloc_generic(ctx, NULL, UCI_TYPE_PATH, dir, sizeof(struct uci_element));
 	/* Keep savedir at the end of ctx->delta_path list */
 	savedir = ctx->delta_path.prev;
 	uci_list_insert(savedir->prev, &e->list);
@@ -177,6 +206,8 @@ static inline int uci_parse_delta_tuple(struct uci_context *ctx, struct uci_ptr 
 		arg += 1;
 
 	UCI_INTERNAL(uci_parse_ptr, ctx, ptr, arg);
+	if (!ptr->comment && pctx->commentbuf)
+		ptr->comment = pctx->commentbuf;
 
 	if (!ptr->section)
 		goto error;
@@ -221,7 +252,7 @@ static void uci_parse_delta_line(struct uci_context *ctx, struct uci_package *p)
 		goto error;
 
 	if (ctx->flags & UCI_FLAG_SAVED_DELTA)
-		uci_add_delta(ctx, &p->saved_delta, cmd, ptr.section, ptr.option, ptr.value);
+		uci_add_delta(ctx, &p->saved_delta, cmd, ptr.section, ptr.option, ptr.value, ptr.comment);
 
 	switch(cmd) {
 	case UCI_CMD_REORDER:
@@ -393,7 +424,7 @@ static void uci_filter_delta(struct uci_context *ctx, const char *name, const ch
 
 		if (!match && ptr.section) {
 			uci_add_delta(ctx, &list, c,
-				ptr.section, ptr.option, ptr.value);
+				ptr.section, ptr.option, ptr.value, ptr.comment);
 		}
 	}
 

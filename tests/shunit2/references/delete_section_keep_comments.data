@@ -1,0 +1,18 @@
+# comment 1
+# comment 2
+config type 'section' # comment 3
+	# comment 4
+	option opt 'val' # comment 5
+	option opt2 'val2' # comment 6 
+
+# comment 7
+config type 'section2' # comment 8
+	option opt3 'val3' # comment 9
+	# comment 10
+	option opt4 'val4' # comment 11
+
+ # comment 12
+config type 'section3'
+	option opt3 'val5'  # comment 13
+# comment 14
+	option opt4 'val6'

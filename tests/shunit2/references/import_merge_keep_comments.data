@@ -1,0 +1,34 @@
+# before config type 'section'
+
+config type 'section'                # after config type 'section'
+	# before option 'opt'
+	option 'opt' 'val' # after option 'opt'
+# before list 'list_opt' 'val0' line 1
+
+	# before list 'list_opt' 'val0' line 2
+	list 'list_opt' 'val0' # after list 'list_opt' 'val0'
+	list 'list_opt' 'val1'
+	option mul_line_opt_sq \''line 1
+line 2 \
+line 3'\' # comment after mul_line_opt_sq
+	option mul_line_opt_dq "\"Hello, \
+World.\'
+" # comment after mul_line_opt_dq
+
+config type 'section3'                # after config type 'section'
+	# before option 'opt'
+	option 'opt' 'val4' # after option 'opt'
+# before list 'list_opt' 'val5' line 1
+
+	# before list 'list_opt' 'val5' line 2
+	list 'list_opt' 'val5' # after list 'list_opt' 'val5'
+	list 'list_opt' 'val6'
+        # comment before mul_line_opt_sq
+	option mul_line_opt_sq \''line 1
+line 2a \
+line 3a'\' # comment after mul_line_opt_sq 2
+	option mul_line_opt_dq "\"Hello, \
+World2.\'
+" # comment after mul_line_opt_dq 2
+
+# this original comment at the end of the file should not be kept

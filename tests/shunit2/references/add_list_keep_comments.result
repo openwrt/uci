@@ -1,0 +1,25 @@
+
+# before
+config named 'section'
+	# before
+	option opt 'val'
+	option opt2 'val2' # after1
+	#before1
+	#before2
+	option opt3 'val3' # after2
+	list listopt 'val'
+	list listopt 'val2'
+
+config named 'section2' # after3
+
+#before3
+#before4
+config named 'section3' # after4
+
+#before5
+#before6
+config named 'section4' # after5
+	#before7
+	#before8
+	option opt3 'val3' # after6
+

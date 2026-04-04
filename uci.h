@@ -320,6 +320,14 @@ extern int uci_set_backend(struct uci_context *ctx, const char *name);
 extern bool uci_validate_text(const char *str);
 
 /**
+ * uci_validate_comment: validate a comment string for uci sections and uci options
+ * @str: comment
+ *
+ * this function checks if a given comment string is formatted correctly
+ */
+extern bool uci_validate_comment(const char *comment);
+
+/**
  * uci_parse_ptr: parse a uci string into a uci_ptr
  * @ctx: uci context
  * @ptr: target data structure
@@ -380,13 +388,24 @@ enum uci_flags {
 	UCI_FLAG_STRICT =        (1 << 0), /* strict mode for the parser */
 	UCI_FLAG_PERROR =        (1 << 1), /* print parser error messages */
 	UCI_FLAG_EXPORT_NAME =   (1 << 2), /* when exporting, name unnamed sections */
-	UCI_FLAG_SAVED_DELTA = (1 << 3), /* store the saved delta in memory as well */
+	UCI_FLAG_SAVED_DELTA =   (1 << 3), /* store the saved delta in memory as well */
+	UCI_FLAG_NO_COMMENTS =   (1 << 4), /* don't load, store, or save comments */
 };
 
 struct uci_element
 {
 	struct uci_list list;
 	enum uci_type type;
+	/*
+	 * comment format: [<comment_before>][<comment_after>]
+	 * <comment_before>: comment lines placed before the element line,
+	 *    concatenated, each starting with '#' and ending with '\n'.
+	 * <comment_after>: comment at the end of the element line itself,
+	 *    starting with '#' and ending without '\n'.
+	 * Example: "#commentlinebefore1\n#commentlinebefore2\n#commentafter"
+	 * NULL and empty string mean no comment.
+	 */
+	char *comment;
 	char *name;
 };
 
@@ -507,6 +526,16 @@ struct uci_ptr
 	struct uci_option *o;
 	struct uci_element *last;
 
+	/*
+	 * comment format: [<comment_before>][<comment_after>]
+	 * <comment_before>: comment lines placed before the element line,
+	 *    concatenated, each starting with '#' and ending with '\n'.
+	 * <comment_after>: comment at the end of the element line itself,
+	 *    starting with '#' and ending without '\n'.
+	 * Example: "#commentlinebefore1\n#commentlinebefore2\n#commentafter"
+	 * NULL and empty string mean no comment.
+	 */
+	const char *comment;
 	const char *package;
 	const char *section;
 	const char *option;

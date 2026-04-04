@@ -1,0 +1,21 @@
+
+# section comment
+config named 'section' # section comment 2
+	# comment before existingopt
+	option existingopt 'val' # comment after existingopt
+	option opt 'val'
+	#before1
+	option opt2 'val'
+	#before1
+	#before2
+	option opt3 'val'
+	option opt4 'val' #after
+	#before1
+	option opt5 'val' #after
+	#before1
+	#before2
+	option opt6 'val' #after
+	#be\fore1
+	#be\fore2
+	option opt7 'val' #af\ter
+

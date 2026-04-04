@@ -12,3 +12,18 @@ test_export ()
 	assertTrue $?
 	assertSameFile ${REF_DIR}/export.result ${TMP_DIR}/export.result
 }
+
+test_export_keep_comments ()
+{
+	cp ${REF_DIR}/export_keep_comments.data ${CONFIG_DIR}/export
+
+	${UCI_Q} export nilpackage
+	assertFalse $?
+
+	${UCI_Q} export export 1>/dev/null 2>&1
+	assertTrue $?
+
+	${UCI} export > ${TMP_DIR}/export_keep_comments.result
+	assertTrue $?
+	assertSameFile ${REF_DIR}/export_keep_comments.result ${TMP_DIR}/export_keep_comments.result
+}

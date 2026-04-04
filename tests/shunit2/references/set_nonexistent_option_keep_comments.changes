@@ -1,0 +1,7 @@
+set.section.opt='val'
+set.section.opt2='val'##before1\n
+set.section.opt3='val'##before1\n#before2\n
+set.section.opt4='val'##after
+set.section.opt5='val'##before1\n#after
+set.section.opt6='val'##before1\n#before2\n#after
+set.section.opt7='val'##be\\fore1\n#be\\fore2\n#af\\ter

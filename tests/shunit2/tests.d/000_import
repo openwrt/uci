@@ -1,5 +1,62 @@
 test_import ()
 {
 	${UCI} import < ${REF_DIR}/import.data
+	assertTrue $?
 	assertSameFile ${REF_DIR}/import.result ${CONFIG_DIR}/import-test
+}
+
+make_abspath()
+{
+	# this should work with /bin/sh
+	echo "$(cd -- "$(dirname "$1")"; pwd)/$(basename "$1")"
+}
+
+test_import_merge ()
+{
+	cp "${REF_DIR}/import_merge.data" "${CONFIG_DIR}/import-test"
+        # if the full path of the config file is specified, 'import' applies
+        # the changes immediately without requiring a commit.
+	ABSPATH="$(make_abspath "${CONFIG_DIR}/import-test")"
+	${UCI} -m import "${ABSPATH}" < "${REF_DIR}/import_merge_import.data"
+	assertTrue $?
+	assertSameFile "${REF_DIR}/import_merge.result" "${CONFIG_DIR}/import-test"
+}
+
+test_import_merge_keep_comments ()
+{
+	cp "${REF_DIR}/import_merge_keep_comments.data" "${CONFIG_DIR}/import-test"
+        # if the full path of the config file is specified, 'import' applies
+        # the changes immediately without requiring a commit.
+	ABSPATH="$(make_abspath "${CONFIG_DIR}/import-test")"
+	${UCI} -m import "${ABSPATH}" < "${REF_DIR}/import_merge_keep_comments_import.data"
+	assertTrue $?
+	assertSameFile "${REF_DIR}/import_merge_keep_comments.result" "${CONFIG_DIR}/import-test"
+}
+
+test_import_with_comments ()
+{
+	${UCI} import < "${REF_DIR}/import_with_comments.data"
+	assertTrue $?
+	assertSameFile "${REF_DIR}/import_with_comments.result" "${CONFIG_DIR}/import-test"
+}
+
+test_import_merge_with_comments ()
+{
+	${UCI} import < "${REF_DIR}/import_with_comments.data"
+	assertTrue $?
+	assertSameFile ${REF_DIR}/import_with_comments.result ${CONFIG_DIR}/import-test
+
+	# merge the same data again: list entries should be appended again
+	${UCI} -m import import-test < "${REF_DIR}/import_with_comments.data"
+	assertTrue $?
+	${UCI} commit
+	assertTrue $?
+	assertSameFile "${REF_DIR}/import_merge_with_comments.result1" "${CONFIG_DIR}/import-test"
+
+	# merge different data
+	${UCI} -m import import-test < "${REF_DIR}/import_merge_with_comments.data"
+	assertTrue $?
+	${UCI} commit
+	assertTrue $?
+	assertSameFile "${REF_DIR}/import_merge_with_comments.result2" "${CONFIG_DIR}/import-test"
 }

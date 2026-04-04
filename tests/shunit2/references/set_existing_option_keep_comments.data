@@ -1,0 +1,25 @@
+# section comment
+config 'named' 'section' # section comment 2
+	# comment before existingopt
+	option existingopt 'val' # comment after existingopt
+
+	# opt oldcomment before
+	option opt 'oldval' # opt oldcomment after
+
+	# opt2 oldcomment before
+	option opt2 'oldval2' # opt2 oldcomment after
+
+	# opt3 oldcomment before
+	option opt3 'oldval3' # opt3 oldcomment after
+
+	# opt4 oldcomment before
+	option opt4 'oldval4' # opt4 oldcomment after
+
+	# opt5 oldcomment before
+	option opt5 'oldval5' # opt5 oldcomment after
+
+	# opt6 oldcomment before
+	option opt6 'oldval6' # opt6 oldcomment after
+
+	# opt7 oldcomment before
+	option opt7 'oldval7' # opt7 oldcomment after

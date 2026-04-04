@@ -1,0 +1,23 @@
+
+config named 'section'
+
+#before1
+config named 'section2'
+
+#before1
+#before2
+config named 'section3'
+
+config named 'section4' #after
+
+#before1
+config named 'section5' #after
+
+#before1
+#before2
+config named 'section6' #after
+
+#be\fore1
+#be\fore2
+config named 'section7' #af\ter
+

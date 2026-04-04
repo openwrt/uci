@@ -1,0 +1,34 @@
+test_delete_section()
+{
+	cp "${REF_DIR}/delete_section.data" "${CONFIG_DIR}/test"
+	${UCI} del test.section2
+	${UCI} commit
+	assertSameFile "${REF_DIR}/delete_section.result" "${CONFIG_DIR}/test"
+}
+
+test_delete_option()
+{
+	cp "${REF_DIR}/delete_option.data" "${CONFIG_DIR}/test"
+	${UCI} del test.section1.opt
+	${UCI} del test.section1.listopt
+	${UCI} commit
+	assertSameFile "${REF_DIR}/delete_option.result" "${CONFIG_DIR}/test"
+}
+
+test_delete_section_keep_comments()
+{
+	cp "${REF_DIR}/delete_section_keep_comments.data" "${CONFIG_DIR}/test"
+	${UCI} del test.section2
+	${UCI} commit
+	assertSameFile "${REF_DIR}/delete_section_keep_comments.result" "${CONFIG_DIR}/test"
+}
+
+test_delete_option_keep_comments()
+{
+	cp "${REF_DIR}/delete_option_keep_comments.data" "${CONFIG_DIR}/test"
+	${UCI} del test.section1.opt
+	${UCI} del test.section1.listopt
+	${UCI} commit
+	assertSameFile "${REF_DIR}/delete_option_keep_comments.result" "${CONFIG_DIR}/test"
+}
+

@@ -30,7 +30,7 @@ set batch_comments.SEC0.option0='value0'
 
 set batch_comments.SEC0.option1='"Hello,
 '"  World\""
-set batch_comments.SEC1='section'
+set batch_comments.SEC1='section' # comment at end of line
 set batch_comments.SEC1.option0="value1"
 
  	 # comment line starts with spaces.
@@ -40,4 +40,28 @@ commit
 EOF
 
 	assertSameFile "${REF_DIR}/batch_comments.result" "${CONFIG_DIR}/batch_comments"
+}
+
+test_batch_keep_comments()
+{
+	>"${CONFIG_DIR}/batch_keep_comments"
+
+	OUTFILE="${TMP_DIR}/batch_keep_comments.output"
+
+        ${UCI} batch >"$OUTFILE" <<EOF
+set batch_keep_comments.SEC0='section' '# comment after section'
+set batch_keep_comments.SEC0.interface='home' '# comment before interface
+# comment after interface'
+add_list batch_keep_comments.SEC0.listopt='listitem' "# comment before listopt
+"
+commit
+get batch_keep_comments.SEC0.interface
+get batch_keep_comments.SEC0.interface #
+get 'batch_keep_comments.SEC0.interface' '#'
+get "batch_keep_comments.SEC0.interface" "#"
+EOF
+	assertSameFile "${REF_DIR}/batch_keep_comments.result" "${CONFIG_DIR}/batch_keep_comments"
+	assertSameFile "${REF_DIR}/batch_keep_comments_output.result" "$OUTFILE"
+
+	rm -f "$OUTFILE"
 }

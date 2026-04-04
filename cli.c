@@ -148,11 +148,11 @@ static void uci_usage(void)
 		"\tchanges    [<config>]\n"
 		"\tcommit     [<config>]\n"
 		"\tadd        <config> <section-type>\n"
-		"\tadd_list   <config>.<section>.<option>=<string>\n"
+		"\tadd_list   <config>.<section>.<option>=<string> [<comment>]\n"
 		"\tdel_list   <config>.<section>.<option>=<string>\n"
 		"\tshow       [<config>[.<section>[.<option>]]]\n"
-		"\tget        <config>.<section>[.<option>]\n"
-		"\tset        <config>.<section>[.<option>]=<value>\n"
+		"\tget        <config>.<section>[.<option>] [#]\n"
+		"\tset        <config>.<section>[.<option>]=<value> [<comment>]\n"
 		"\tdelete     <config>[.<section>[[.<option>][=<id>]]]\n"
 		"\trename     <config>.<section>[.<option>]=<name>\n"
 		"\trevert     <config>[.<section>[.<option>]]\n"
@@ -162,6 +162,7 @@ static void uci_usage(void)
 		"\t-c <path>  set the search path for config files (default: "UCI_CONFDIR")\n"
 		"\t-C <path>  set the search path for config override files (default: "UCI_CONF2DIR")\n"
 		"\t-d <str>   set the delimiter for list values in uci show\n"
+		"\t-D         don't load, store in memory, or save comments\n"
 		"\t-f <file>  use <file> as input instead of stdin\n"
 		"\t-m         when importing, merge data into an existing package\n"
 		"\t-n         name unnamed sections on export (default)\n"
@@ -212,7 +213,42 @@ static void uci_print_value(FILE *f, const char *v)
 	fprintf(f, "'");
 }
 
-static void uci_show_value(struct uci_option *o, bool quote)
+static void uci_print_changes_comment(FILE *f, const char *comment)
+{
+	if (!comment || !comment[0])
+		return;
+
+	fputc('#', f);
+	for (const char *readptr = comment; *readptr; readptr++) {
+		if (*readptr == '\\') {
+			fputc('\\', f);
+			fputc('\\', f);
+		} else if (*readptr == '\n') {
+			fputc('\\', f);
+			fputc('n', f);
+		} else
+			fputc(*readptr, f);
+	}
+}
+
+static void uci_print_comment(FILE *f, const char *comment)
+{
+	fputc('\'', f);
+	if (comment) {
+		for (const char *readptr = comment; *readptr; readptr++) {
+			if (*readptr != '\'')
+				fputc(*readptr, f);
+			else {
+				fputc('\'', f); /* end single-quoted string */
+				fputc('\\', f); fputc('\'', f); /* escaped single quote */
+				fputc('\'', f); /* start single-quoted string */
+			}
+		}
+	}
+	fputc('\'', f);
+}
+
+static void uci_show_option_value(struct uci_option *o, bool quote)
 {
 	struct uci_element *e;
 	bool sep = false;
@@ -224,7 +260,6 @@ static void uci_show_value(struct uci_option *o, bool quote)
 			uci_print_value(stdout, o->v.string);
 		else
 			printf("%s", o->v.string);
-		printf("\n");
 		break;
 	case UCI_TYPE_LIST:
 		uci_foreach_element(&o->v.list, e) {
@@ -236,10 +271,31 @@ static void uci_show_value(struct uci_option *o, bool quote)
 				uci_print_value(stdout, e->name);
 			sep = true;
 		}
-		printf("\n");
 		break;
 	default:
-		printf("<unknown>\n");
+		printf("<unknown>");
+		break;
+	}
+}
+
+static void uci_show_option_comment(struct uci_option *o)
+{
+	struct uci_element *e;
+	bool sep = false;
+
+	switch(o->type) {
+	case UCI_TYPE_STRING:
+		uci_print_comment(stdout, o->e.comment);
+		break;
+	case UCI_TYPE_LIST:
+		uci_foreach_element(&o->v.list, e) {
+			printf("%s", (sep ? delimiter : ""));
+			uci_print_comment(stdout, e->comment);
+			sep = true;
+		}
+		break;
+	default:
+		printf("<unknown>");
 		break;
 	}
 }
@@ -250,7 +306,8 @@ static void uci_show_option(struct uci_option *o, bool quote)
 		o->section->package->e.name,
 		(cur_section_ref ? cur_section_ref : o->section->e.name),
 		o->e.name);
-	uci_show_value(o, quote);
+	uci_show_option_value(o, quote);
+	printf("\n");
 }
 
 static void uci_show_section(struct uci_section *s)
@@ -261,7 +318,8 @@ static void uci_show_section(struct uci_section *s)
 
 	cname = s->package->e.name;
 	sname = (cur_section_ref ? cur_section_ref : s->e.name);
-	printf("%s.%s=%s\n", cname, sname, s->type);
+	printf("%s.%s=%s", cname, sname, s->type);
+	printf("\n");
 	uci_foreach_element(&s->options, e) {
 		uci_show_option(uci_to_option(e), true);
 	}
@@ -309,6 +367,8 @@ static void uci_show_changes(struct uci_package *p)
 			printf("%s", op);
 			uci_print_value(stdout, h->value);
 		}
+		if (!(ctx->flags & UCI_FLAG_NO_COMMENTS))
+			uci_print_changes_comment(stdout, e->comment);
 		printf("\n");
 	}
 }
@@ -472,7 +532,8 @@ static int uci_do_section_cmd(int cmd, int argc, char **argv)
 	int ret = UCI_OK;
 	int dummy;
 
-	if (argc != 2)
+	if (!((argc == 2) ||
+	      ((argc == 3) && ((cmd == CMD_GET) || (cmd == CMD_SET) || (cmd == CMD_ADD_LIST)))))
 		return 255;
 
 	if (uci_lookup_ptr(ctx, &ptr, argv[1], true) != UCI_OK) {
@@ -483,10 +544,19 @@ static int uci_do_section_cmd(int cmd, int argc, char **argv)
 		return 1;
 	}
 
+	if (argc == 3) {
+		ptr.comment = argv[2];
+		if ((cmd == CMD_GET) && strcmp(ptr.comment, "#"))
+			return 1;
+		else if (!uci_validate_comment(ptr.comment))
+			return 1;
+	}
+
 	if (ptr.value && (cmd != CMD_SET) && (cmd != CMD_DEL) &&
 	    (cmd != CMD_ADD_LIST) && (cmd != CMD_DEL_LIST) &&
 	    (cmd != CMD_RENAME) && (cmd != CMD_REORDER))
 		return 1;
+
 
 	switch(cmd) {
 	case CMD_GET:
@@ -498,10 +568,20 @@ static int uci_do_section_cmd(int cmd, int argc, char **argv)
 			cli_perror();
 			return 1;
 		}
-		if (ptr.o)
-			uci_show_value(ptr.o, false);
-		else if (ptr.s)
-			printf("%s\n", ptr.s->type);
+		if (ptr.o) {
+			if (!ptr.comment)
+				uci_show_option_value(ptr.o, false);
+			else
+				uci_show_option_comment(ptr.o);
+			printf("\n");
+		}
+		else if (ptr.s) {
+			if (!ptr.comment)
+				printf("%s", ptr.s->type);
+			else
+				uci_print_comment(stdout, ptr.s->e.comment);
+			printf("\n");
+		}
 		break;
 	case CMD_RENAME:
 		ret = uci_rename(ctx, &ptr);
@@ -685,7 +765,7 @@ static int uci_cmd(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	int ret;
+	int ret = 1;
 	int c;
 
 	flags = CLI_FLAG_SHOW_EXT;
@@ -694,10 +774,10 @@ int main(int argc, char **argv)
 	ctx = uci_alloc_context();
 	if (!ctx) {
 		cli_error("Out of memory\n");
-		return 1;
+		goto cleanup;
 	}
 
-	while((c = getopt(argc, argv, "c:C:d:f:LmnNp:P:qsSt:X")) != -1) {
+	while((c = getopt(argc, argv, "c:C:d:Df:LmnNp:P:qsSt:X")) != -1) {
 		switch(c) {
 			case 'c':
 				uci_set_confdir(ctx, optarg);
@@ -712,14 +792,17 @@ int main(int argc, char **argv)
 				if (input != stdin) {
 					fclose(input);
 					cli_error("Too many input files.\n");
-					return 1;
+					goto cleanup;
 				}
 
 				input = fopen(optarg, "r");
 				if (!input) {
 					cli_error("uci: %s", strerror(errno));
-					return 1;
+					goto cleanup;
 				}
+				break;
+			case 'D':
+				ctx->flags |= UCI_FLAG_NO_COMMENTS;
 				break;
 			case 'm':
 				flags |= CLI_FLAG_MERGE;
@@ -755,7 +838,8 @@ int main(int argc, char **argv)
 				break;
 			default:
 				uci_usage();
-				return 0;
+				ret = 0;
+				goto cleanup;
 		}
 	}
 	if (optind > 1)
@@ -765,7 +849,8 @@ int main(int argc, char **argv)
 
 	if (argc < 2) {
 		uci_usage();
-		return 0;
+		ret = 0;
+		goto cleanup;
 	}
 
 	ret = uci_cmd(argc - 1, argv + 1);
@@ -775,6 +860,7 @@ int main(int argc, char **argv)
 	if (ret == 255)
 		uci_usage();
 
+cleanup:
 	uci_free_context(ctx);
 
 	return ret;

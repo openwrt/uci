@@ -142,6 +142,9 @@ __private void uci_cleanup(struct uci_context *ctx)
 	if (pctx->package)
 		uci_free_package(&pctx->package);
 
+	if (pctx->commentbuf)
+		free(pctx->commentbuf);
+
 	if (pctx->buf)
 		free(pctx->buf);
 

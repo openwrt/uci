@@ -1,0 +1,12 @@
+config type 'section'
+	option opt 'val'
+	option opt2 'val2'
+
+config type 'section2'
+	option opt3 'val3'
+	option opt4 'val4'
+
+
+config type 'section3'
+	option opt3 'val5'
+	option opt4 'val6'

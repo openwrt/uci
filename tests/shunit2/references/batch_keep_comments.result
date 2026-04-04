@@ -1,0 +1,7 @@
+
+config section 'SEC0' # comment after section
+	# comment before interface
+	option interface 'home' # comment after interface
+	# comment before listopt
+	list listopt 'listitem'
+

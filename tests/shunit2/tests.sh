@@ -24,6 +24,12 @@ rm -rf ${TESTS_DIR}
 mkdir -p ${TESTS_DIR}
 
 cat << 'EOF' > ${FULL_SUITE}
+oneTimeSetUp() {
+	if [ -n "${SHUNIT2_TEST_TO_RUN:-}" ]; then
+		echo "SHUNIT2_TEST_TO_RUN='$SHUNIT2_TEST_TO_RUN'"
+		suite_addTest "$SHUNIT2_TEST_TO_RUN"
+	fi
+}
 setUp() {
 	mkdir -p ${CONFIG_DIR} ${CHANGES_DIR} ${TMP_DIR}
 }
@@ -41,6 +47,7 @@ assertSameFile() {
 		echo "TEST:"
 		cat $test
 		echo "----"
+		diff -r $ref $test
 	}
 }
 assertNotSegFault()
@@ -60,6 +67,36 @@ assertFailWithNoReturn() {
 	assertNotIllegal $rv
 	assertNull "'$test' returns '$value'" "$value"
 }
+# assertFailWithNoReturn2 takes the command to execute as separate arguments
+# and preserves the arguments exactly, including whitespace
+assertFailWithNoReturn2() {
+	test=""; for arg in "$@"; do test="$test \"$arg\""; done
+	value="$("$@")"
+	rv=$?
+	assertFalse "$test does not fail" $rv
+	assertNotSegFault $rv
+	assertNotIllegal $rv
+	assertNull "$test returns '$value'" "$value"
+}
+# assertFailWithNoReturn2DiscardStderr takes the command to execute as separate arguments
+# and preserves the arguments exactly, including whitespace.
+# It redirects stderr to /dev/null, which is useful to get rid of noisy errors such
+# as long "Usage: ' messages.
+assertFailWithNoReturn2DiscardStderr() {
+	test=""; for arg in "$@"; do test="$test \"$arg\""; done
+	value="$("$@" 2>/dev/null)"
+	rv=$?
+	assertFalse "$test does not fail" $rv
+	assertNotSegFault $rv
+	assertNotIllegal $rv
+	assertNull "$test returns '$value'" "$value"
+}
+assertSuccess() {
+	test=""; for arg in "$@"; do test="$test \"$arg\""; done
+	"$@" 2>/dev/null
+	rv=$?
+	assertTrue "$test should have exit code 0 instead of $rv" $rv
+}
 EOF
 
 for suite in "${SCRIPTS_DIR}"/*
@@ -76,5 +113,8 @@ TMP_DIR="${TMP_DIR}" \
 UCI="${UCI}" \
 UCI_Q="${UCI_Q}" \
 /bin/sh ${FULL_SUITE}
+EXITSTATUS=$?
 
 rm -rf ${TESTS_DIR}
+
+exit ${EXITSTATUS}

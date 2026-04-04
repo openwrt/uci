@@ -1,0 +1,20 @@
+# before package 'import-test' line 1
+# before package 'import-test' line 2
+package 'import-test' # after package 'import-test'
+
+# before config type 'section'
+
+config type 'section'                # after config type 'section'
+	# before option 'opt'
+	option 'opt' 'val' # after option 'opt'
+# before list 'list_opt' 'val0' line 1
+
+	# before list 'list_opt' 'val0' line 2
+	list 'list_opt' 'val0' # after list 'list_opt' 'val0'
+	list 'list_opt' 'val1'
+	option mul_line_opt_sq \''line 1
+line 2 \
+line 3'\' # comment after mul_line_opt_sq
+	option mul_line_opt_dq "\"Hello, \
+World.\'
+" # comment after mul_line_opt_dq

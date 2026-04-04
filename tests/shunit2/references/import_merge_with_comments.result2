@@ -1,0 +1,28 @@
+
+# 2before config type 'section'
+config type 'section' # 2after config type 'section'
+	# before option 'opt'
+	option opt 'optval' # after option 'opt'
+	# before list 'list_opt' 'val0' line 1
+	# before list 'list_opt' 'val0' line 2
+	list list_opt 'val0' # after list 'list_opt' 'val0'
+	list list_opt 'val1'
+	# before list 'list_opt' 'val0' line 1
+	# before list 'list_opt' 'val0' line 2
+	list list_opt 'val0' # after list 'list_opt' 'val0'
+	list list_opt 'val1'
+	# before
+	list list_opt 'val7' # after
+	list list_opt 'differentval'
+	option mul_line_opt_sq ''\''line 1
+line 2 \
+line 3'\''' # comment after mul_line_opt_sq
+	option mul_line_opt_dq '"Hello, World.'\''
+' # 2comment after mul_line_opt_dq
+	option newopt 'newval'
+
+# 1somecomment before
+config type 'section2' # 1somecomment after
+	# 2somecomment before
+	option opt2 'val2' # 2somecomment after
+

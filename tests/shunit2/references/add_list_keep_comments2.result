@@ -1,0 +1,17 @@
+
+config named 'section'
+	#before1
+	list listopt 'val'
+	#before1
+	#before2
+	list listopt 'val2'
+	list listopt 'val3' #after
+	#before1
+	list listopt 'val4' #after
+	#before1
+	#before2
+	list listopt 'val5' #after
+	#be\fore1
+	#be\fore2
+	list listopt 'val6' #af\ter
+

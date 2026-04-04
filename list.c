@@ -35,7 +35,7 @@ static bool uci_list_set_pos(struct uci_list *head, struct uci_list *ptr, int po
  * payload is appended to the struct to save memory and reduce fragmentation
  */
 __private struct uci_element *
-uci_alloc_generic(struct uci_context *ctx, int type, const char *name, int size)
+uci_alloc_generic(struct uci_context *ctx, const char *comment, int type, const char *name, int size)
 {
 	struct uci_element *e;
 	int datalen = size;
@@ -43,6 +43,13 @@ uci_alloc_generic(struct uci_context *ctx, int type, const char *name, int size)
 
 	ptr = uci_malloc(ctx, datalen);
 	e = (struct uci_element *) ptr;
+	if (comment && comment[0]) {
+		UCI_TRAP_SAVE(ctx, error);
+		if (!uci_validate_comment(comment))
+			UCI_THROW(ctx, UCI_ERR_INVAL);
+		e->comment = uci_strdup(ctx, comment);
+		UCI_TRAP_RESTORE(ctx);
+	}
 	e->type = type;
 	if (name) {
 		UCI_TRAP_SAVE(ctx, error);
@@ -53,6 +60,7 @@ uci_alloc_generic(struct uci_context *ctx, int type, const char *name, int size)
 	goto done;
 
 error:
+	free(e->comment);
 	free(ptr);
 	UCI_THROW(ctx, ctx->err);
 
@@ -60,9 +68,39 @@ done:
 	return e;
 }
 
+static void
+uci_update_str(struct uci_context *ctx, char **pstr, const char *new)
+{
+	if (*pstr && new && new[0] && strlen(*pstr) >= strlen(new)) {
+		strcpy(*pstr, new);
+	} else {
+		if (*pstr) {
+			free(*pstr);
+			*pstr = NULL;
+		}
+
+		if (new && new[0]) {
+			UCI_TRAP_SAVE(ctx, error);
+			*pstr = uci_strdup(ctx, new);
+			UCI_TRAP_RESTORE(ctx);
+		}
+	}
+
+	return;
+error:
+	UCI_THROW(ctx, ctx->err);
+}
+
+static void
+uci_update_generic(struct uci_context *ctx, struct uci_element *e, const char *comment)
+{
+	uci_update_str(ctx, &(e->comment), comment);
+}
+
 __private void
 uci_free_element(struct uci_element *e)
 {
+	free(e->comment);
 	free(e->name);
 	if (!uci_list_empty(&e->list))
 		uci_list_del(&e->list);
@@ -70,13 +108,13 @@ uci_free_element(struct uci_element *e)
 }
 
 static struct uci_option *
-uci_alloc_option(struct uci_section *s, const char *name, const char *value, struct uci_list *after)
+uci_alloc_option(struct uci_section *s, const char *comment, const char *name, const char *value, struct uci_list *after)
 {
 	struct uci_package *p = s->package;
 	struct uci_context *ctx = p->ctx;
 	struct uci_option *o;
 
-	o = uci_alloc_element(ctx, option, name, strlen(value) + 1);
+	o = uci_alloc_element(ctx, comment, option, name, strlen(value) + 1);
 	o->type = UCI_TYPE_STRING;
 	o->v.string = uci_dataptr(o);
 	o->section = s;
@@ -84,6 +122,22 @@ uci_alloc_option(struct uci_section *s, const char *name, const char *value, str
 	uci_list_insert(after ? after : s->options.prev, &o->e.list);
 
 	return o;
+}
+
+/*
+ * Attempts to update the option without having to reallocate.
+ * Returns false on failure, in which case nothing was updated.
+ * Returns true on success.
+ */
+static bool
+uci_try_update_option(struct uci_context *ctx, struct uci_option *o, const char *comment, const char *value)
+{
+	if (o->type != UCI_TYPE_STRING || strlen(o->v.string) < strlen(value))
+		return false;
+
+	strcpy(o->v.string, value);
+	uci_update_generic(ctx, &(o->e), comment);
+	return true;
 }
 
 static inline void
@@ -109,13 +163,13 @@ uci_free_option(struct uci_option *o)
 }
 
 static struct uci_option *
-uci_alloc_list(struct uci_section *s, const char *name, struct uci_list *after)
+uci_alloc_list(struct uci_section *s, const char *comment, const char *name, struct uci_list *after)
 {
 	struct uci_package *p = s->package;
 	struct uci_context *ctx = p->ctx;
 	struct uci_option *o;
 
-	o = uci_alloc_element(ctx, option, name, 0);
+	o = uci_alloc_element(ctx, comment, option, name, 0);
 	o->type = UCI_TYPE_LIST;
 	o->section = s;
 	uci_list_init(&o->v.list);
@@ -195,7 +249,7 @@ static void uci_section_transfer_options(struct uci_section *dst, struct uci_sec
 }
 
 static struct uci_section *
-uci_alloc_section(struct uci_package *p, const char *type, const char *name, struct uci_list *after)
+uci_alloc_section(struct uci_package *p, const char *comment, const char *type, const char *name, struct uci_list *after)
 {
 	struct uci_context *ctx = p->ctx;
 	struct uci_section *s;
@@ -203,7 +257,7 @@ uci_alloc_section(struct uci_package *p, const char *type, const char *name, str
 	if (name && !name[0])
 		name = NULL;
 
-	s = uci_alloc_element(ctx, section, name, strlen(type) + 1);
+	s = uci_alloc_element(ctx, comment, section, name, strlen(type) + 1);
 	uci_list_init(&s->options);
 	s->type = uci_dataptr(s);
 	s->package = p;
@@ -215,6 +269,23 @@ uci_alloc_section(struct uci_package *p, const char *type, const char *name, str
 	uci_list_insert(after ? after : p->sections.prev, &s->e.list);
 
 	return s;
+}
+
+/*
+ * Attempts to update the section without having to reallocate.
+ * Returns false on failure, in which case nothing was updated.
+ * Returns true on success.
+ */
+static bool
+uci_try_update_section(struct uci_context *ctx, struct uci_section *s, const char *comment, const char *type)
+{
+	if (strlen(s->type) < strlen(type))
+		/* need to realloc entire option */
+		return false;
+
+	strcpy(s->type, type);
+	uci_update_generic(ctx, &(s->e), comment);
+	return true;
 }
 
 static void
@@ -232,11 +303,11 @@ uci_free_section(struct uci_section *s)
 }
 
 __private struct uci_package *
-uci_alloc_package(struct uci_context *ctx, const char *name)
+uci_alloc_package(struct uci_context *ctx, const char *comment, const char *name)
 {
 	struct uci_package *p;
 
-	p = uci_alloc_element(ctx, package, name, 0);
+	p = uci_alloc_element(ctx, comment, package, name, 0);
 	p->ctx = ctx;
 	uci_list_init(&p->sections);
 	uci_list_init(&p->delta);
@@ -500,7 +571,7 @@ int uci_rename(struct uci_context *ctx, struct uci_ptr *ptr)
 	UCI_ASSERT(ctx, ptr->value);
 
 	if (!internal && p->has_delta)
-		uci_add_delta(ctx, &p->delta, UCI_CMD_RENAME, ptr->section, ptr->option, ptr->value);
+		uci_add_delta(ctx, &p->delta, UCI_CMD_RENAME, ptr->section, ptr->option, ptr->value, NULL);
 
 	n = uci_strdup(ctx, ptr->value);
 	free(e->name);
@@ -524,27 +595,33 @@ int uci_reorder_section(struct uci_context *ctx, struct uci_section *s, int pos)
 	changed = uci_list_set_pos(&s->package->sections, &s->e.list, pos);
 	if (!internal && p->has_delta && changed) {
 		sprintf(order, "%d", pos);
-		uci_add_delta(ctx, &p->delta, UCI_CMD_REORDER, s->e.name, NULL, order);
+		uci_add_delta(ctx, &p->delta, UCI_CMD_REORDER, s->e.name, NULL, order, NULL);
 	}
 
 	return 0;
 }
 
-int uci_add_section(struct uci_context *ctx, struct uci_package *p, const char *type, struct uci_section **res)
+__private int
+uci_add_section_with_comment(struct uci_context *ctx, struct uci_package *p, const char *comment, const char *type, struct uci_section **res)
 {
 	bool internal = ctx && ctx->internal;
 	struct uci_section *s;
 
 	UCI_HANDLE_ERR(ctx);
 	UCI_ASSERT(ctx, p != NULL);
-	s = uci_alloc_section(p, type, NULL, NULL);
+	s = uci_alloc_section(p, comment, type, NULL, NULL);
 	if (s && s->anonymous)
 		uci_fixup_section(ctx, s);
 	*res = s;
 	if (!internal && p->has_delta)
-		uci_add_delta(ctx, &p->delta, UCI_CMD_ADD, s->e.name, NULL, type);
+		uci_add_delta(ctx, &p->delta, UCI_CMD_ADD, s->e.name, NULL, type, s->e.comment);
 
 	return 0;
+}
+
+int uci_add_section(struct uci_context *ctx, struct uci_package *p, const char *type, struct uci_section **res)
+{
+	return uci_add_section_with_comment(ctx, p, NULL, type, res);
 }
 
 int uci_delete(struct uci_context *ctx, struct uci_ptr *ptr)
@@ -569,7 +646,7 @@ int uci_delete(struct uci_context *ctx, struct uci_ptr *ptr)
 		uci_foreach_element_safe(&ptr->o->v.list, tmp, e2) {
 			if (index == 0) {
 				if (!internal && p->has_delta)
-					uci_add_delta(ctx, &p->delta, UCI_CMD_REMOVE, ptr->section, ptr->option, ptr->value);
+					uci_add_delta(ctx, &p->delta, UCI_CMD_REMOVE, ptr->section, ptr->option, ptr->value, NULL);
 				uci_free_option(uci_to_option(e2));
 				return 0;
 			}
@@ -580,7 +657,7 @@ int uci_delete(struct uci_context *ctx, struct uci_ptr *ptr)
 	}
 
 	if (!internal && p->has_delta)
-		uci_add_delta(ctx, &p->delta, UCI_CMD_REMOVE, ptr->section, ptr->option, NULL);
+		uci_add_delta(ctx, &p->delta, UCI_CMD_REMOVE, ptr->section, ptr->option, NULL, NULL);
 
 	uci_free_any(&e1);
 
@@ -609,19 +686,19 @@ int uci_add_list(struct uci_context *ctx, struct uci_ptr *ptr)
 	}
 
 	/* create new item */
-	e1 = uci_alloc_generic(ctx, UCI_TYPE_ITEM, ptr->value, sizeof(struct uci_option));
+	e1 = uci_alloc_generic(ctx, ptr->comment, UCI_TYPE_ITEM, ptr->value, sizeof(struct uci_option));
 
 	if (!ptr->o) {
 		/* create new list */
 		UCI_TRAP_SAVE(ctx, error);
-		ptr->o = uci_alloc_list(ptr->s, ptr->option, NULL);
+		ptr->o = uci_alloc_list(ptr->s, ptr->comment, ptr->option, NULL);
 		UCI_TRAP_RESTORE(ctx);
 	} else if (ptr->o->type == UCI_TYPE_STRING) {
 		/* create new list and add old string value as item to list */
 		struct uci_option *old = ptr->o;
 		UCI_TRAP_SAVE(ctx, error);
-		e2 = uci_alloc_generic(ctx, UCI_TYPE_ITEM, old->v.string, sizeof(struct uci_option));
-		ptr->o = uci_alloc_list(ptr->s, ptr->option, &old->e.list);
+		e2 = uci_alloc_generic(ctx, old->e.comment, UCI_TYPE_ITEM, old->v.string, sizeof(struct uci_option));
+		ptr->o = uci_alloc_list(ptr->s, ptr->comment, ptr->option, &old->e.list);
 		UCI_TRAP_RESTORE(ctx);
 		uci_list_add(&ptr->o->v.list, &e2->list);
 
@@ -635,7 +712,7 @@ int uci_add_list(struct uci_context *ctx, struct uci_ptr *ptr)
 	uci_list_add(&ptr->o->v.list, &e1->list);
 
 	if (!internal && ptr->p->has_delta)
-		uci_add_delta(ctx, &ptr->p->delta, UCI_CMD_LIST_ADD, ptr->section, ptr->option, ptr->value);
+		uci_add_delta(ctx, &ptr->p->delta, UCI_CMD_LIST_ADD, ptr->section, ptr->option, ptr->value, ptr->comment);
 
 	return 0;
 error:
@@ -667,7 +744,7 @@ int uci_del_list(struct uci_context *ctx, struct uci_ptr *ptr)
 
 	p = ptr->p;
 	if (!internal && p->has_delta)
-		uci_add_delta(ctx, &p->delta, UCI_CMD_LIST_DEL, ptr->section, ptr->option, ptr->value);
+		uci_add_delta(ctx, &p->delta, UCI_CMD_LIST_DEL, ptr->section, ptr->option, ptr->value, NULL);
 
 	uci_foreach_element_safe(&ptr->o->v.list, tmp, e) {
 		if (!strcmp(ptr->value, uci_to_option(e)->e.name)) {
@@ -705,31 +782,23 @@ int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 
 		return uci_delete(ctx, ptr);
 	} else if (!ptr->o && ptr->option) { /* new option */
-		ptr->o = uci_alloc_option(ptr->s, ptr->option, ptr->value, NULL);
+		ptr->o = uci_alloc_option(ptr->s, ptr->comment, ptr->option, ptr->value, NULL);
 	} else if (!ptr->s && ptr->section) { /* new section */
-		ptr->s = uci_alloc_section(ptr->p, ptr->value, ptr->section, NULL);
+		ptr->s = uci_alloc_section(ptr->p, ptr->comment, ptr->value, ptr->section, NULL);
 	} else if (ptr->o && ptr->option) { /* update option */
-		if (ptr->o->type == UCI_TYPE_STRING && !strcmp(ptr->o->v.string, ptr->value))
-			return 0;
-
-		if (ptr->o->type == UCI_TYPE_STRING && strlen(ptr->o->v.string) == strlen(ptr->value)) {
-			strcpy(ptr->o->v.string, ptr->value);
-		} else {
+		/* value, list values, comment may have changed */
+		if (!uci_try_update_option(ctx, ptr->o, ptr->comment, ptr->value)) {
 			struct uci_option *old = ptr->o;
-			ptr->o = uci_alloc_option(ptr->s, ptr->option, ptr->value, &old->e.list);
+			ptr->o = uci_alloc_option(ptr->s, ptr->comment, ptr->option, ptr->value, &old->e.list);
 			if (ptr->option == old->e.name)
 				ptr->option = ptr->o->e.name;
 			uci_free_option(old);
 		}
 	} else if (ptr->s && ptr->section) { /* update section */
-		if (!strcmp(ptr->s->type, ptr->value))
-			return 0;
-
-		if (strlen(ptr->s->type) == strlen(ptr->value)) {
-			strcpy(ptr->s->type, ptr->value);
-		} else {
+		/* type, comment may have changed */
+		if (!uci_try_update_section(ctx, ptr->s, ptr->comment, ptr->value)) {
 			struct uci_section *old = ptr->s;
-			ptr->s = uci_alloc_section(ptr->p, ptr->value, old->e.name, &old->e.list);
+			ptr->s = uci_alloc_section(ptr->p, old->e.comment, ptr->value, old->e.name, &old->e.list);
 			uci_section_transfer_options(ptr->s, old);
 			if (ptr->section == old->e.name)
 				ptr->section = ptr->s->e.name;
@@ -741,7 +810,7 @@ int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 	}
 
 	if (!internal && ptr->p->has_delta)
-		uci_add_delta(ctx, &ptr->p->delta, UCI_CMD_CHANGE, ptr->section, ptr->option, ptr->value);
+		uci_add_delta(ctx, &ptr->p->delta, UCI_CMD_CHANGE, ptr->section, ptr->option, ptr->value, ptr->comment);
 
 	return 0;
 }
