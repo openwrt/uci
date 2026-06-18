@@ -218,9 +218,32 @@ __private FILE *uci_open_stream(struct uci_context *ctx, const char *filename, c
 	if (fd < 0)
 		goto error;
 
-	ret = flock(fd, (write ? LOCK_EX : LOCK_SH));
-	if ((ret < 0) && (errno != ENOSYS))
-		goto error_close;
+	if (write) {
+		ret = flock(fd, LOCK_EX);
+		if ((ret < 0) && (errno != ENOSYS))
+			goto error_close;
+	} else {
+		while (1) {
+			ret = flock(fd, LOCK_SH | LOCK_NB);
+			if (ret == 0 || errno == ENOSYS)
+				break;
+
+			if (errno == EINTR)
+				continue;
+
+			if (errno == EWOULDBLOCK || errno == EAGAIN) {
+				/* Reopen to follow a potentially replaced inode while writer holds lock */
+				close(fd);
+				usleep(1000);
+				fd = open(filename, flags, mode);
+				if (fd < 0)
+					goto error;
+				continue;
+			}
+
+			goto error_close;
+		}
+	}
 
 	ret = lseek(fd, 0, pos);
 

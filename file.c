@@ -816,15 +816,15 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
 done:
 	free(name);
 	free(path);
-	uci_close_stream(f1);
 	if (do_rename) {
 		path = realpath(p->path, NULL);
 		if (!path || stat(path, &statbuf) || chmod(filename, statbuf.st_mode) || rename(filename, path)) {
 			unlink(filename);
-			UCI_THROW(ctx, UCI_ERR_IO);
+			ctx->err = UCI_ERR_IO;
 		}
 		free(path);
 	}
+	uci_close_stream(f1);
 	if (ctx->err)
 		UCI_THROW(ctx, ctx->err);
 }
