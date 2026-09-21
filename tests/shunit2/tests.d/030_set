@@ -44,3 +44,19 @@ test_set_existing_option_multiline()
 World\""
 	assertSameFile ${REF_DIR}/set_existing_option_multiline.result ${CHANGES_DIR}/set
 }
+
+test_set_anonymous_section_type_preserves_anonymous()
+{
+	cat > ${CONFIG_DIR}/set << 'EOF_CONFIG'
+config short
+	option value 'kept'
+EOF_CONFIG
+
+	${UCI} set 'set.@short[0]=longer'
+	${UCI} commit set
+
+	output=$(${UCI} export set)
+	echo "$output" | grep -q '^config longer$'
+	assertTrue "changing an anonymous section type makes it named" $?
+	assertEquals "kept" "$(${UCI} get 'set.@longer[0].value')"
+}

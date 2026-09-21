@@ -730,6 +730,7 @@ int uci_set(struct uci_context *ctx, struct uci_ptr *ptr)
 		} else {
 			struct uci_section *old = ptr->s;
 			ptr->s = uci_alloc_section(ptr->p, ptr->value, old->e.name, &old->e.list);
+			ptr->s->anonymous = old->anonymous;
 			uci_section_transfer_options(ptr->s, old);
 			if (ptr->section == old->e.name)
 				ptr->section = ptr->s->e.name;
