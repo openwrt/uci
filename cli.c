@@ -313,6 +313,15 @@ static void uci_show_changes(struct uci_package *p)
 	}
 }
 
+/* drop every loaded package: the next command loads what it needs */
+static void unload_all(void)
+{
+	struct uci_element *e, *tmp;
+
+	uci_foreach_element_safe(&ctx->root, tmp, e)
+		uci_unload(ctx, uci_to_package(e));
+}
+
 static int package_cmd(int cmd, char *tuple)
 {
 	struct uci_ptr ptr;
@@ -383,6 +392,9 @@ static int uci_do_import(int argc, char **argv)
 		/* need a package to merge */
 		return 255;
 
+	if (flags & CLI_FLAG_BATCH)
+		unload_all();
+
 	if (flags & CLI_FLAG_MERGE) {
 		if (uci_load(ctx, name, &package) != UCI_OK)
 			package = NULL;
@@ -420,6 +432,9 @@ static int uci_do_package_cmd(int cmd, int argc, char **argv)
 	if (argc > 2)
 		return 255;
 
+	if (flags & CLI_FLAG_BATCH)
+		unload_all();
+
 	if (argc == 2)
 		return package_cmd(cmd, argv[1]);
 
@@ -440,6 +455,7 @@ out:
 
 static int uci_do_add(int argc, char **argv)
 {
+	struct uci_element *e;
 	struct uci_package *p = NULL;
 	struct uci_section *s = NULL;
 	int ret;
@@ -447,7 +463,12 @@ static int uci_do_add(int argc, char **argv)
 	if (argc != 3)
 		return 255;
 
-	ret = uci_load(ctx, argv[1], &p);
+	uci_foreach_element(&ctx->root, e) {
+		if (!strcmp(e->name, argv[1]))
+			p = uci_to_package(e);
+	}
+
+	ret = p ? UCI_OK : uci_load(ctx, argv[1], &p);
 	if (ret != UCI_OK)
 		goto done;
 
@@ -597,18 +618,21 @@ static int uci_batch(void)
 
 	flags |= CLI_FLAG_BATCH;
 	while (!feof(input)) {
-		struct uci_element *e, *tmp;
-
 		ret = uci_batch_cmd();
 		if (ret == 254)
 			return 0;
 		else if (ret == 255)
 			cli_error("Unknown command\n");
 
-		/* clean up */
-		uci_foreach_element_safe(&ctx->root, tmp, e) {
-			uci_unload(ctx, uci_to_package(e));
-		}
+		/*
+		 * A command that succeeded has saved its changes and left its
+		 * package as saved, so keep it loaded: reloading it for every
+		 * command parses the config and replays its whole delta again,
+		 * which grows with each command. A failed command may leave a
+		 * package half changed: start again from the saved state.
+		 */
+		if (ret)
+			unload_all();
 	}
 	flags &= ~CLI_FLAG_BATCH;
 
